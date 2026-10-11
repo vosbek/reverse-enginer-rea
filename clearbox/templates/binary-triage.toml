@@ -10,9 +10,14 @@ views = ["inventory.stats", "binary.formats"]
 [[sections]]
 title = "Executables and archives"
 question = "Architecture, kind, entropy, and notable properties of each binary."
-views = ["binary.files", "binary.sections"]
+views = ["binary.files", "binary.pe", "binary.sections"]
+
+[[sections]]
+title = "What can it do?"
+question = "Which operating-system capabilities do the imported functions grant?"
+views = ["binary.capabilities", "binary.imports"]
 
 [[sections]]
 title = "Strings"
 question = "URLs, paths, libraries, and type names embedded in the binaries."
-views = ["binary.strings"]
+views = ["binary.strings", "binary.wide_strings"]

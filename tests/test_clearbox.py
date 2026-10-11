@@ -266,5 +266,61 @@ class SelfAudit(unittest.TestCase):
         self.assertEqual(project["dependencies"], [])
 
 
+
+def build_pe() -> bytes:
+    """A minimal PE32+ image: one .rdata section with an import table and a version string, plus an overlay."""
+    import struct
+    sec_rva, sec_raw, sec_size = 0x1000, 0x200, 0x400
+    sec = bytearray(sec_size)
+    # import descriptor at +0, terminator at +20; ILT at +0x40; name at +0x80; hint/name at +0x90
+    struct.pack_into("<IIIII", sec, 0, sec_rva + 0x40, 0, 0, sec_rva + 0x80, sec_rva + 0x40)
+    struct.pack_into("<QQ", sec, 0x40, sec_rva + 0x90, 0)
+    sec[0x80:0x80 + 12] = b"WININET.dll\x00"
+    sec[0x90:0x90 + 2 + 18] = b"\x00\x00InternetOpenUrlW\x00\x00"
+    # a VS_VERSIONINFO String: wLength, wValueLength (words), wType, key, pad, value
+    key = "ProductName".encode("utf-16-le") + b"\x00\x00"
+    val = "Demo App".encode("utf-16-le") + b"\x00\x00"
+    entry = struct.pack("<HHH", 0, len(val) // 2, 1) + key
+    entry += b"\x00" * (-len(entry) % 4) + val
+    sec[0x200:0x200 + len(entry)] = entry
+    sec[0x300:0x300 + 40] = "Demo Update Mutex".encode("utf-16-le") + b"\x00\x00"
+    dos = bytearray(0x80)
+    dos[0:2] = b"MZ"
+    struct.pack_into("<I", dos, 0x3C, 0x80)
+    coff = b"PE\x00\x00" + struct.pack("<HHIIIHH", 0x8664, 1, 0x4554FA1E, 0, 0, 240, 0x22)
+    opt = bytearray(240)
+    struct.pack_into("<H", opt, 0, 0x20B)
+    struct.pack_into("<HH", opt, 68, 2, 0x0160)
+    struct.pack_into("<I", opt, 108, 16)
+    struct.pack_into("<II", opt, 112 + 8, sec_rva, 40)  # import directory
+    section = b".rsrc\x00\x00\x00" + struct.pack("<IIII", sec_size, sec_rva, sec_size, sec_raw) + b"\x00" * 12 \
+        + struct.pack("<I", 0x40000040)
+    head = bytes(dos) + coff + bytes(opt) + section
+    return head + b"\x00" * (sec_raw - len(head)) + bytes(sec) + b"OVERLAY!" * 200
+
+
+class PeParsing(unittest.TestCase):
+    def test_imports_version_capabilities_and_overlay(self):
+        from clearbox.analyzers import pe
+        info = pe.parse(build_pe())
+        self.assertEqual(info["arch"], "x86-64")
+        self.assertEqual(info["subsystem"], "Windows GUI")
+        self.assertEqual(info["imports"], [{"dll": "WININET.dll", "functions": ["InternetOpenUrlW"]}])
+        self.assertEqual(info["version"], {"ProductName": "Demo App"})
+        self.assertIn("ASLR", info["hardening"])
+        self.assertTrue(any("deterministic" in n for n in info["notes"]))
+        self.assertGreater(info["overlay"], 1000)
+        caps = pe.capabilities(info["imports"])
+        self.assertEqual(caps[0]["capability"], "Network (WinINet/WinHTTP)")
+
+    def test_binary_triage_reports_wide_strings(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            pathlib.Path(tmp, "demo.exe").write_bytes(build_pe())
+            report = scan(tmp, "binary-triage")
+            views = {v["id"]: v for s in report["sections"] for v in s["views"]}
+            self.assertIn("Demo Update Mutex", [r["string"] for r in views["binary.wide_strings"]["rows"]])
+            self.assertEqual(views["binary.pe"]["rows"][0]["product"], "Demo App")
+
+
 if __name__ == "__main__":
     unittest.main()

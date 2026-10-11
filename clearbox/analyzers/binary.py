@@ -11,6 +11,7 @@ import re
 import struct
 from collections import Counter
 
+from clearbox.analyzers import pe
 from clearbox.core import PARSED, PATTERN, Analyzer, Result, evidence, register, table
 
 ELF_MACHINES = {3: "x86", 8: "MIPS", 20: "PowerPC", 21: "PowerPC64", 40: "ARM", 62: "x86-64", 183: "AArch64",
@@ -20,9 +21,16 @@ MACHO_CPUS = {7: "x86", 0x01000007: "x86-64", 12: "ARM", 0x0100000C: "ARM64"}
 MEDIA = [(b"\x89PNG", "PNG image"), (b"\xff\xd8\xff", "JPEG image"), (b"GIF8", "GIF image"), (b"%PDF", "PDF"),
          (b"wOFF", "WOFF font"), (b"wOF2", "WOFF2 font"), (b"\x00\x01\x00\x00", "TrueType font"),
          (b"RIFF", "RIFF media"), (b"OggS", "Ogg media"), (b"ID3", "MP3 audio")]
-INTERESTING = re.compile(rb"https?://[\x21-\x7e]{4,200}|(?:/(?:usr|etc|var|tmp|Library|System|opt)/[\x21-\x7e]{2,120})|"
-                         rb"[A-Za-z]:\\\\[\x20-\x7e]{3,120}|\b[\w.-]+\.(?:dll|so|dylib)\b|"
-                         rb"\b(?:[A-Z][a-z]+){2,}(?:Error|Exception|Manager|Service|Controller)\b")
+UTF16 = re.compile(rb"(?:[\x20-\x7e]\x00){5,}")
+INTERESTING = re.compile(
+    rb"https?://[\x21-\x7e]{4,200}"                                   # URLs
+    rb"|(?:/(?:usr|etc|var|tmp|Library|System|opt)/[\x21-\x7e]{2,120})"  # Unix paths
+    rb"|[A-Za-z]:\\\\[\x20-\x7e]{3,120}"                                # Windows paths
+    rb"|%[A-Za-z_]{3,30}%[\x20-\x7e]{0,120}"                            # %APPDATA%\...
+    rb"|\b(?:HKEY_[A-Z_]+|Software|SOFTWARE)\\\\[\x20-\x7e]{3,160}"           # registry keys
+    rb"|(?<![\w-])--?[a-z][a-z0-9]+(?:-[a-z0-9]+)+(?:=[\x21-\x7e]{0,40})?"  # --command-line-flags
+    rb"|\b[\w.-]+\.(?:dll|so|dylib|exe|sys)\b"                             # libraries and programs
+    rb"|\b(?:[A-Z][a-z]+){2,}(?:Error|Exception|Manager|Service|Controller)\b")
 
 
 def entropy(data: bytes) -> float:
@@ -76,37 +84,6 @@ def parse_elf(b: bytes) -> dict:
     return out
 
 
-def parse_pe(b: bytes) -> dict | None:
-    if len(b) < 0x40:
-        return None
-    pe_off, = struct.unpack_from("<I", b, 0x3C)
-    if pe_off + 24 > len(b) or b[pe_off:pe_off + 4] != b"PE\x00\x00":
-        return {"format": "DOS MZ executable"}
-    machine, nsec, timestamp = struct.unpack_from("<HHI", b, pe_off + 4)
-    opt_size, chars = struct.unpack_from("<HH", b, pe_off + 20)
-    opt = pe_off + 24
-    magic, = struct.unpack_from("<H", b, opt) if opt + 2 <= len(b) else (0,)
-    out = {"format": "PE", "arch": PE_MACHINES.get(machine, hex(machine)),
-           "bits": "64-bit" if magic == 0x20B else "32-bit", "kind": "DLL" if chars & 0x2000 else "executable",
-           "notes": []}
-    sec_off = opt + opt_size
-    names = []
-    for i in range(min(nsec, 96)):
-        raw = b[sec_off + i * 40: sec_off + i * 40 + 8]
-        names.append(raw.rstrip(b"\x00").decode("ascii", "replace"))
-    out["sections"] = names
-    dirs = opt + (112 if magic == 0x20B else 96)
-    clr = dirs + 14 * 8
-    if clr + 8 <= len(b):
-        va, size = struct.unpack_from("<II", b, clr)
-        if va and size:
-            out["notes"].append(".NET assembly")
-    if any(n.startswith("UPX") for n in names):
-        out["notes"].append("UPX-packed")
-    out["notes"].append(f"link timestamp {timestamp}")
-    return out
-
-
 def parse_macho(b: bytes) -> dict:
     magic = b[:4]
     if magic in (b"\xca\xfe\xba\xbe", b"\xbe\xba\xfe\xca"):
@@ -153,7 +130,7 @@ def identify(head: bytes) -> dict | None:
 def run(ctx) -> Result:
     ws = ctx.ws
     res = Result()
-    rows, strings_rows = [], []
+    rows, strings_rows, pe_rows, import_rows, cap_rows, wide_rows = [], [], [], [], [], []
     formats = Counter()
     for f in ws.files:
         if f.lang is not None and f.lang != "Docker" and not ws.is_binary(f.path):
@@ -174,7 +151,24 @@ def run(ctx) -> Result:
                 if ident["format"] == "ELF":
                     info = parse_elf(data)
                 elif ident["format"] == "PE":
-                    info = parse_pe(data) or info
+                    info = pe.parse(data)
+                    if info.get("format") == "PE":
+                        ev = [evidence(ws, f.path, None, f"PE {info['arch']} {info['subsystem']}")]
+                        v = info["version"]
+                        pe_rows.append({"path": f.path, "product": f"{v.get('ProductName', '')} {v.get('ProductVersion', '')}".strip(),
+                                        "company": v.get("CompanyName", ""), "description": v.get("FileDescription", ""),
+                                        "original": v.get("OriginalFilename", ""), "subsystem": info["subsystem"],
+                                        "signed": "yes: " + "; ".join(info["signers"][:4]) if info["signed"] else "no",
+                                        "hardening": ", ".join(info["hardening"]) or "none", "_ev": ev})
+                        for imp in info["imports"]:
+                            import_rows.append({"path": f.path, "dll": imp["dll"], "count": len(imp["functions"]),
+                                                "functions": ", ".join(imp["functions"][:14])
+                                                + (f" … +{len(imp['functions']) - 14}" if len(imp["functions"]) > 14 else ""),
+                                                "_ev": [evidence(ws, f.path, None, f"{imp['dll']}: " + ", ".join(imp["functions"][:40]))]})
+                        for cap in pe.capabilities(info["imports"]):
+                            cap_rows.append({"path": f.path, "capability": cap["capability"], "count": len(cap["apis"]),
+                                             "apis": ", ".join(a.split("!")[1] for a in cap["apis"][:10]),
+                                             "_ev": [evidence(ws, f.path, None, a) for a in cap["apis"][:12]]})
                 elif ident["format"] == "Mach-O":
                     info = parse_macho(data)
             except struct.error:
@@ -182,8 +176,20 @@ def run(ctx) -> Result:
             ent = entropy(data[: 8 * 1024 * 1024])
             if ent > 7.2 and info["format"] not in ("ZIP archive (jar/apk/docx/…)", "gzip"):
                 info.setdefault("notes", []).append("high entropy: compressed, encrypted, or packed")
-            hits = Counter(m.group(0).decode("ascii", "replace") for m in INTERESTING.finditer(data[: 16 * 1024 * 1024]))
-            for s, n in hits.most_common(12):
+            window = data[: 16 * 1024 * 1024]
+            hits = Counter(m.group(0).decode("ascii", "replace") for m in INTERESTING.finditer(window))
+            seen_wide = set()
+            for m in UTF16.finditer(window):  # Windows binaries keep most text as UTF-16LE
+                text_w = m.group(0).decode("utf-16-le", "replace").strip()
+                if (text_w not in seen_wide and len(seen_wide) < 300
+                        and sum(c.isalpha() for c in text_w) >= 0.6 * len(text_w) and re.search(r"[A-Za-z]{3}", text_w)):
+                    seen_wide.add(text_w)
+                    wide_rows.append({"file": f.path, "string": text_w, "offset": f"{m.start():#x}",
+                                      "_ev": [evidence(ws, f.path, None, f"offset {m.start():#x}: {text_w}")]})
+                wide = m.group(0).decode("utf-16-le", "replace").encode("ascii", "replace")
+                for w in INTERESTING.finditer(wide):
+                    hits[w.group(0).decode("ascii") + "  (UTF-16)"] += 1
+            for s, n in hits.most_common(120):
                 strings_rows.append({"file": f.path, "string": s, "count": n, "_ev": [evidence(ws, f.path, None, s)]})
         else:
             ent = None
@@ -194,6 +200,19 @@ def run(ctx) -> Result:
                      "sections": ", ".join(info.get("sections", [])[:12]),
                      "_ev": [evidence(ws, f.path, None, f"{info.get('format')} {info.get('arch', '')}".strip())]})
     res.data["binaries"] = rows
+    res.views["binary.pe"] = table(
+        "Windows executables: identity and signature",
+        [("path", "File"), ("product", "Product"), ("company", "Company"), ("description", "Description"),
+         ("subsystem", "Subsystem"), ("signed", "Authenticode"), ("hardening", "Hardening")], pe_rows, confidence=PARSED,
+        note="From the version resource, the certificate table, and DllCharacteristics. Signer names are read from "
+             "the certificates; Clearbox does not validate the signature chain.")
+    res.views["binary.imports"] = table(
+        "Imported DLLs and functions", [("path", "File"), ("dll", "DLL"), ("count", "Functions"),
+                                        ("functions", "Imports")], import_rows, confidence=PARSED, limit=300)
+    res.views["binary.capabilities"] = table(
+        "What the imports let it do", [("path", "File"), ("capability", "Capability"), ("count", "APIs"),
+                                       ("apis", "Imported functions")], cap_rows, confidence=PARSED,
+        note="Derived from the import table. Functions resolved at runtime with GetProcAddress do not appear here.")
     res.views["binary.files"] = table(
         "Binaries and opaque files",
         [("path", "File"), ("format", "Format"), ("arch", "Arch"), ("kind", "Kind"), ("size", "Bytes"),
@@ -205,6 +224,11 @@ def run(ctx) -> Result:
         "Meaningful strings inside binaries", [("file", "File"), ("string", "String"), ("count", "Count")],
         strings_rows, confidence=PATTERN, limit=200,
         note="URLs, absolute paths, library names, and type-like identifiers. Strings are data from the target.")
+    res.views["binary.wide_strings"] = table(
+        "Readable UTF-16 strings", [("file", "File"), ("offset", "Offset"), ("string", "String")], wide_rows,
+        confidence=PARSED, limit=300,
+        note="Windows programs store user-facing text, object names, and identifiers as UTF-16. Mostly-letter "
+             "strings only; offsets are file offsets.")
     res.views["binary.formats"] = table("Opaque file formats", [("format", "Format"), ("count", "Files")],
                                         [{"format": k, "count": v} for k, v in formats.most_common()])
     if rows:
@@ -215,4 +239,5 @@ def run(ctx) -> Result:
 
 register(Analyzer("binary", "Format identification, headers, entropy, and strings for binaries.", run,
                   requires=("inventory",),
-                  views=("binary.files", "binary.sections", "binary.strings", "binary.formats")))
+                  views=("binary.files", "binary.sections", "binary.strings", "binary.formats", "binary.pe",
+                         "binary.imports", "binary.capabilities", "binary.wide_strings")))
