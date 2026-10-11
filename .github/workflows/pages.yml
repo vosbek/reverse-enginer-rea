@@ -2,7 +2,7 @@ name: Test and deploy site
 
 on:
   push:
-    branches: [main, "claude/trusting-maxwell-1hyr19"]
+    branches: [main, "claude/**"]
   pull_request:
   workflow_dispatch:
 
@@ -24,7 +24,7 @@ jobs:
 
   build:
     needs: test
-    if: github.event_name != 'pull_request'
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

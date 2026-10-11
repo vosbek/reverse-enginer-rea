@@ -156,7 +156,7 @@ footer{border-top:1px solid var(--rule);padding-block:30px 48px;color:var(--mute
   <header class="top">
     <a class="brand" href="./"><span class="glyph" aria-hidden="true"></span>Clearbox</a>
     <nav class="links" aria-label="Sections">
-      <a href="#case-study">Case study</a>
+      <a href="#case-study">Case studies</a>
       <a href="#compare">Compare</a>
       <a href="#templates">Templates</a>
       <a href="#evidence">Evidence</a>
@@ -234,6 +234,18 @@ footer{border-top:1px solid var(--rule);padding-block:30px 48px;color:var(--mute
       <a class="report" href="demo/rea-trace-setup/"><span class="t">Feature trace: setup</span><span class="d">Where it lives, how it's reached, how to rebuild it.</span><span class="go">Open report →</span></a>
       <a class="report" href="demo/rea-dependencies/"><span class="t">Dependency audit</span><span class="d">Declared versus imported, and install hooks.</span><span class="go">Open report →</span></a>
       <a class="report" href="demo/clearbox-self/"><span class="t">Clearbox on itself</span><span class="d">Same rules, our own code. Its only real capability is writing the report.</span><span class="go">Open report →</span></a>
+    </div>
+  </section>
+
+  <section class="block" id="case-study-2">
+    <div class="head">
+      <div><span class="eyebrow">Case study 02</span><h2 style="margin-top:14px">From Spotify's installer to our own player.</h2></div>
+      <p>We triaged <code class="mono">SpotifySetup.exe</code> without running it. It turned out to be a signed downloader stub that loads its network library at runtime and coordinates with an updater through named mutexes. Then we built mySpotify on the official API and scanned our own code with the same rules.</p>
+    </div>
+    <div class="reports">
+      <a class="report" href="case-studies/myspotify/"><span class="t">Read the case study</span><span class="d">Installer findings, feature map, build, and verification.</span><span class="go">Open →</span></a>
+      <a class="report" href="case-studies/myspotify/reports/spotify-installer/"><span class="t">SpotifySetup.exe triage</span><span class="d">Imports, signature, capabilities, UTF-16 strings.</span><span class="go">Open report →</span></a>
+      <a class="report" href="https://github.com/vosbek/my-spotify"><span class="t">mySpotify</span><span class="d">Run it on Windows in five steps. Premium required.</span><span class="go">GitHub →</span></a>
     </div>
   </section>
 
