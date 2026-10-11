@@ -1,0 +1,23 @@
+id = "dependency-audit"
+name = "Dependency audit"
+summary = "What the target declares, what it actually imports, the gaps between the two, and what runs at install."
+
+[[sections]]
+title = "Declared"
+question = "What do the manifests and lockfiles say?"
+views = ["manifests.stats", "manifests.dependencies", "manifests.locks"]
+
+[[sections]]
+title = "Actually used"
+question = "Which packages are imported, and by how many files?"
+views = ["imports.external"]
+
+[[sections]]
+title = "Gaps"
+question = "What is imported but undeclared, or declared but never imported?"
+views = ["imports.undeclared", "imports.unused_declared"]
+
+[[sections]]
+title = "Install time"
+question = "Which scripts run automatically when the package is installed?"
+views = ["manifests.install_hooks"]

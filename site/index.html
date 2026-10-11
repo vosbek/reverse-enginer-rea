@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Clearbox</title>
+<meta name="description" content="Clearbox reverse engineers a codebase or binary without running it. Every claim points to a file, a line, and a SHA-256.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: a light table. Wide editorial hero, then evidence-led sections on a 12-col grid; specimen tags carry the proof. */
+:root{
+  --paper:#eef2f3; --sheet:#f9fbfb; --ink:#14232b; --muted:#53646c; --rule:#cbd5d9;
+  --accent:#0e6e78; --accent-ink:#ffffff; --mark:#f4d94a; --mark-ink:#14232b;
+  --warn:#a8620a; --bad:#b4332b; --good:#2f6b3a;
+  --display:"Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --body:"IBM Plex Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --paper:#0e171c; --sheet:#142229; --ink:#dbe5e9; --muted:#93a5ad; --rule:#28383f;
+  --accent:#5cc4cf; --accent-ink:#0e171c; --mark:#e6cb3c; --mark-ink:#0e171c;
+  --warn:#e0a24a; --bad:#ef7a70; --good:#8fcf8a; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --paper:#0e171c; --sheet:#142229; --ink:#dbe5e9; --muted:#93a5ad; --rule:#28383f;
+  --accent:#5cc4cf; --accent-ink:#0e171c; --mark:#e6cb3c; --mark-ink:#0e171c;
+  --warn:#e0a24a; --bad:#ef7a70; --good:#8fcf8a; color-scheme:dark }
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.6 var(--body)}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:clamp(16px,4vw,40px)}
+code,pre,.mono{font-family:var(--mono)}
+.eyebrow{font:600 12px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0}
+h2{font-size:clamp(30px,4.2vw,48px);line-height:1.04;font-weight:800;letter-spacing:-.02em}
+h3{font-size:21px;line-height:1.2;font-weight:700}
+p{margin:0}
+.mark{background:var(--mark);color:var(--mark-ink);padding:0 .12em;border-radius:2px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+
+/* header */
+.top{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;padding-block:22px}
+.brand{display:flex;align-items:center;gap:10px;font:800 21px/1 var(--display);color:var(--ink);text-decoration:none;letter-spacing:-.01em}
+.glyph{width:22px;height:22px;border:2.5px solid var(--ink);position:relative;display:inline-block}
+.glyph::after{content:"";position:absolute;inset:4px;background:var(--mark);border:1.5px solid var(--ink)}
+nav.links{display:flex;gap:4px 20px;flex-wrap:wrap;font-size:15px}
+nav.links a{color:var(--muted);text-decoration:none}
+nav.links a:hover{color:var(--ink)}
+
+/* hero */
+.hero{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:clamp(28px,5vw,64px);align-items:center;padding-block:clamp(28px,6vw,72px) clamp(40px,6vw,80px)}
+.hero h1{font-size:clamp(46px,7.6vw,96px);line-height:.93;font-weight:800;letter-spacing:-.035em}
+.hero .lede{font-size:clamp(17px,1.6vw,20px);color:var(--muted);max-width:34em;margin-top:24px}
+.cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:30px}
+.btn{display:inline-flex;align-items:center;gap:8px;font:600 15px/1 var(--body);padding:13px 18px;border-radius:3px;text-decoration:none;border:1.5px solid var(--ink);color:var(--ink)}
+.btn.primary{background:var(--ink);color:var(--paper)}
+.btn:hover{transform:translateY(-1px)}
+@media (prefers-reduced-motion:no-preference){.btn{transition:transform .12s}}
+.facts{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:26px;font:13px/1.4 var(--mono);color:var(--muted)}
+.facts b{color:var(--ink)}
+
+/* specimen tags */
+.tags{display:grid;gap:14px;min-width:0}
+.tag{background:var(--sheet);border:1px solid var(--rule);position:relative;min-width:0;box-shadow:0 1px 0 var(--rule)}
+.tag:nth-child(2){margin-left:clamp(0px,3vw,28px)}
+.tag:nth-child(3){margin-left:clamp(0px,1.5vw,14px)}
+.tag .hd{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:9px 12px;border-bottom:1px dashed var(--rule);font:600 11px/1.3 var(--mono);letter-spacing:.06em;text-transform:uppercase}
+.sev{color:var(--bad)} .sev.m{color:var(--warn)}
+.tag .conf{color:var(--muted)}
+.tag .line{display:grid;grid-template-columns:auto minmax(0,1fr);font:13px/1.5 var(--mono)}
+.tag .loc{background:var(--mark);color:var(--mark-ink);padding:8px 10px;font-weight:600;white-space:nowrap}
+.tag .loc a{color:inherit}
+.tag code{padding:8px 12px;white-space:pre-wrap;overflow-wrap:anywhere}
+.tag .ft{padding:7px 12px;border-top:1px solid var(--rule);font:11px/1.4 var(--mono);color:var(--muted);overflow-wrap:anywhere}
+.tag::before{content:"";position:absolute;left:-7px;top:16px;width:12px;height:12px;border-radius:50%;background:var(--paper);border:1px solid var(--rule)}
+
+section.block{padding-block:clamp(48px,7vw,96px);border-top:1px solid var(--rule)}
+.head{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px 56px;align-items:end;margin-bottom:40px}
+.head p{color:var(--muted);font-size:18px;max-width:36em}
+
+/* case study numbers */
+.numbers{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid var(--rule);background:var(--rule);gap:1px}
+.num{background:var(--sheet);padding:18px 18px 16px;display:grid;gap:4px;align-content:start}
+.num .v{font:800 clamp(30px,3.4vw,44px)/1 var(--display);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.num .l{font-size:14px;color:var(--muted)}
+.found{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:28px;margin-top:44px}
+.found article{display:grid;gap:10px;align-content:start;min-width:0}
+.found .k{font:600 12px var(--mono);color:var(--accent);letter-spacing:.08em;text-transform:uppercase}
+.found p{color:var(--muted)}
+.found code{font-size:13px;background:var(--sheet);border:1px solid var(--rule);padding:1px 5px;color:var(--ink);overflow-wrap:anywhere}
+.reports{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-top:44px}
+.report{display:grid;gap:8px;align-content:start;padding:16px;border:1px solid var(--rule);background:var(--sheet);text-decoration:none;color:var(--ink);min-width:0}
+.report:hover{border-color:var(--accent)}
+.report .t{font:700 17px/1.2 var(--display)}
+.report .d{font-size:14px;color:var(--muted)}
+.report .go{font:600 12px var(--mono);color:var(--accent)}
+
+/* comparison */
+.cmpwrap{overflow-x:auto;border:1px solid var(--rule);background:var(--sheet)}
+table.cmp{border-collapse:collapse;width:100%;min-width:720px;font-size:15px}
+.cmp th,.cmp td{padding:14px 16px;text-align:left;vertical-align:top;border-bottom:1px solid var(--rule)}
+.cmp thead th{font:600 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:var(--paper)}
+.cmp tbody th{font-weight:600;width:20%}
+.cmp td.them{color:var(--muted);width:40%}
+.cmp td.us{width:40%}
+.cmp td.us::before{content:"";display:inline-block;width:8px;height:8px;background:var(--accent);margin-right:8px;vertical-align:1px}
+.cmp a{white-space:nowrap}
+.fair{margin-top:22px;display:grid;grid-template-columns:auto minmax(0,1fr);gap:16px;padding:18px;border:1.5px dashed var(--rule)}
+.fair .eyebrow{padding-top:4px}
+.fair p{color:var(--muted);max-width:62em}
+
+/* templates */
+.tpl{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:40px;align-items:start}
+.tpl ul{list-style:none;margin:0;padding:0;display:grid;border-top:1px solid var(--rule)}
+.tpl li{display:grid;grid-template-columns:170px minmax(0,1fr);gap:4px 16px;padding:14px 0;border-bottom:1px solid var(--rule)}
+.tpl li code{font-weight:600;color:var(--accent)}
+.tpl li span{color:var(--muted)}
+.code{position:relative;background:var(--ink);color:var(--paper);border-radius:3px;min-width:0}
+.code pre{margin:0;padding:18px 18px;overflow-x:auto;font:13.5px/1.6 var(--mono)}
+.code .cap{display:flex;justify-content:space-between;align-items:center;padding:8px 10px 8px 18px;border-bottom:1px solid color-mix(in srgb,var(--paper) 18%,transparent);font:12px var(--mono);color:color-mix(in srgb,var(--paper) 70%,transparent)}
+.copy{font:600 12px var(--mono);background:transparent;color:inherit;border:1px solid color-mix(in srgb,var(--paper) 35%,transparent);border-radius:3px;padding:4px 8px;cursor:pointer}
+.c{color:color-mix(in srgb,var(--paper) 55%,transparent)}
+.hl{color:var(--mark)}
+
+/* evidence model */
+.pills{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.pill{border:1px solid var(--rule);background:var(--sheet);padding:18px;display:grid;gap:8px;align-content:start}
+.pill b{font:600 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;border:1px solid currentColor;border-radius:999px;padding:3px 8px;justify-self:start}
+.pill b.p{color:var(--accent)} .pill b.r{color:var(--warn)} .pill b.h{color:var(--muted)}
+.pill p{color:var(--muted);font-size:15px}
+.ledger{margin-top:28px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:20px}
+.ledger div{display:grid;gap:4px}
+.ledger h3{font-size:17px}
+.ledger p{font-size:15px;color:var(--muted)}
+
+/* install */
+.steps{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+.steps .code + p{margin-top:10px;color:var(--muted);font-size:15px}
+footer{border-top:1px solid var(--rule);padding-block:30px 48px;color:var(--muted);font-size:14px;display:flex;flex-wrap:wrap;gap:8px 28px;justify-content:space-between}
+
+@media (max-width:900px){
+  .hero,.head,.tpl,.steps{grid-template-columns:minmax(0,1fr)}
+  .found{grid-template-columns:minmax(0,1fr)}
+  .numbers{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .pills,.ledger{grid-template-columns:minmax(0,1fr)}
+  .tag:nth-child(n){margin-left:0}
+}
+@media (max-width:520px){ .tpl li{grid-template-columns:minmax(0,1fr)} .fair{grid-template-columns:minmax(0,1fr)} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="brand" href="./"><span class="glyph" aria-hidden="true"></span>Clearbox</a>
+    <nav class="links" aria-label="Sections">
+      <a href="#case-study">Case study</a>
+      <a href="#compare">Compare</a>
+      <a href="#templates">Templates</a>
+      <a href="#evidence">Evidence</a>
+      <a href="#install">Install</a>
+      <a href="https://github.com/vosbek/reverse-enginer-rea">GitHub</a>
+    </nav>
+  </header>
+
+  <section class="hero">
+    <div>
+      <span class="eyebrow">Static reverse engineering</span>
+      <h1 style="margin-top:18px">Reverse engineer anything. <span class="mark">Run nothing.</span></h1>
+      <p class="lede">Clearbox reads a codebase or a folder of binaries and explains how it works: its architecture, how a feature is wired, what it can do to your machine, and how to rebuild it. Every claim points to a file, a line, and the SHA-256 of the bytes it read.</p>
+      <div class="cta">
+        <a class="btn primary" href="demo/rea-trace-setup/">See a real trace</a>
+        <a class="btn" href="#install">Install in one line</a>
+      </div>
+      <div class="facts">
+        <span><b>0</b> runtime dependencies</span>
+        <span><b>0</b> processes spawned</span>
+        <span><b>0</b> network calls</span>
+        <span><b>~3,000</b> lines you can audit in an afternoon</span>
+      </div>
+    </div>
+    <div class="tags" aria-label="Three findings from the REA scan, with evidence">
+      <div class="tag">
+        <div class="hd"><span class="sev">High · requests elevated privileges</span><span class="conf">pattern</span></div>
+        <div class="line"><span class="loc"><a href="https://github.com/morluto/rea/blob/a95795c6ed3cb149e03460f4c818ad12e0c670d9/src/application/LinuxHopper.ts#L337">LinuxHopper.ts:337</a></span><code>const executable = isRoot ? command[0] : "pkexec";</code></div>
+        <div class="ft">morluto/rea · sha256 b45f18669881fb28…</div>
+      </div>
+      <div class="tag">
+        <div class="hd"><span class="sev m">Medium · installs system software</span><span class="conf">pattern</span></div>
+        <div class="line"><span class="loc"><a href="https://github.com/morluto/rea/blob/a95795c6ed3cb149e03460f4c818ad12e0c670d9/src/application/LinuxHopper.ts#L329">LinuxHopper.ts:329</a></span><code>? [["apt-get", "install", "-y", archive, ...runtimeDependencies]]</code></div>
+        <div class="ft">morluto/rea · sha256 b45f18669881fb28…</div>
+      </div>
+      <div class="tag">
+        <div class="hd"><span class="sev m">Medium · runs code at install time</span><span class="conf">parsed</span></div>
+        <div class="line"><span class="loc"><a href="https://github.com/morluto/rea/blob/a95795c6ed3cb149e03460f4c818ad12e0c670d9/package.json">package.json</a></span><code>"prepare": "node scripts/prepare.mjs"</code></div>
+        <div class="ft">morluto/rea · read by the manifests analyzer</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="case-study">
+    <div class="head">
+      <div><span class="eyebrow">Case study 01</span><h2 style="margin-top:14px">We pointed Clearbox at REA.</h2></div>
+      <p>REA (“Reverse Engineer Anything”) is a popular MCP server for agent-driven reverse engineering. We scanned commit <code class="mono">a95795c</code> to understand what it is and what it does to the machine it runs on. It took 14 seconds and nothing ran.</p>
+    </div>
+    <div class="numbers">
+      <div class="num"><span class="v">504,490</span><span class="l">lines of code across 2,530 source files (43% tests)</span></div>
+      <div class="num"><span class="v">561</span><span class="l">locked npm packages behind 38 declared runtime dependencies</span></div>
+      <div class="num"><span class="v">103</span><span class="l">agent tool names declared in source</span></div>
+      <div class="num"><span class="v">185</span><span class="l">high-severity capability sites in production code</span></div>
+    </div>
+    <div class="found">
+      <article>
+        <span class="k">Process control</span>
+        <h3>It launches programs and drives terminals.</h3>
+        <p>Process-spawning calls appear in 106 non-test files, and 5 files drive an interactive terminal through <code>node-pty</code>. That is how REA runs Ghidra, Hopper, and the targets themselves. It also means a malicious target gets the same user permissions.</p>
+      </article>
+      <article>
+        <span class="k">Host changes</span>
+        <h3>It can install software as root.</h3>
+        <p>The Linux Hopper installer calls <code>apt-get</code>, <code>dnf</code>, or <code>pacman</code> and escalates with <code>pkexec</code>. REA documents this and asks first. Clearbox found it in one file, with line numbers, before anything was installed.</p>
+      </article>
+      <article>
+        <span class="k">Feature trace</span>
+        <h3>Its setup edits your agents' config.</h3>
+        <p>Tracing “setup agent client configuration” lands on 10 seed files reached from <code>scripts/rea.mjs → src/cli.ts → src/cli/setupCommands.ts</code>, plus a 10-step rebuild plan, 32 environment variables, and 36 test files that pin the behavior.</p>
+      </article>
+    </div>
+    <div class="reports">
+      <a class="report" href="demo/rea-overview/"><span class="t">Architecture overview</span><span class="d">Areas, import matrix, hubs, cycles, entry points.</span><span class="go">Open report →</span></a>
+      <a class="report" href="demo/rea-security/"><span class="t">Security surface</span><span class="d">Every host-touching capability, line by line.</span><span class="go">Open report →</span></a>
+      <a class="report" href="demo/rea-trace-setup/"><span class="t">Feature trace: setup</span><span class="d">Where it lives, how it's reached, how to rebuild it.</span><span class="go">Open report →</span></a>
+      <a class="report" href="demo/rea-dependencies/"><span class="t">Dependency audit</span><span class="d">Declared versus imported, and install hooks.</span><span class="go">Open report →</span></a>
+      <a class="report" href="demo/clearbox-self/"><span class="t">Clearbox on itself</span><span class="d">Same rules, our own code. Its only real capability is writing the report.</span><span class="go">Open report →</span></a>
+    </div>
+  </section>
+
+  <section class="block" id="compare">
+    <div class="head">
+      <div><span class="eyebrow">Side by side</span><h2 style="margin-top:14px">What runs on your machine?</h2></div>
+      <p>Reverse-engineering tools open untrusted code by definition. The safest one does the most it can without executing anything, and tells you exactly what it read.</p>
+    </div>
+    <div class="cmpwrap">
+      <table class="cmp">
+        <thead><tr><th scope="col"></th><th scope="col">REA 6.4</th><th scope="col">Clearbox 0.1</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Install footprint</th><td class="them">38 runtime dependencies, 561 locked packages, plus a <code>prepare</code> script that runs on install.</td><td class="us">Python standard library only. No dependencies, no install scripts.</td></tr>
+          <tr><th scope="row">Code you would audit</th><td class="them">About 290,000 lines of non-test TypeScript, Java, Python, and Swift.</td><td class="us">About 3,000 lines of Python, plus five TOML templates.</td></tr>
+          <tr><th scope="row">Runs the target?</th><td class="them">Runtime capture “runs or interacts with the selected target using your user permissions” (REA README).</td><td class="us">Never. Python is parsed with <code>ast</code>, binaries are decoded with <code>struct</code>. A test fails the build if the package imports <code>subprocess</code>, <code>socket</code>, or calls <code>eval</code>.</td></tr>
+          <tr><th scope="row">Sandbox</th><td class="them">“This is not a sandbox” (REA SECURITY.md).</td><td class="us">Read-only jail: paths outside the target are refused, symlinks are never followed, reads use <code>O_NOFOLLOW</code>, sizes are capped.</td></tr>
+          <tr><th scope="row">Privileges and installs</th><td class="them">Can install Hopper and its dependencies through <code>pkexec</code> after asking.</td><td class="us">No privilege requests and no installs, ever.</td></tr>
+          <tr><th scope="row">Agent setup</th><td class="them">Setup edits agent configuration files (with a plan, approval, and backups).</td><td class="us">Prints nothing into your configs. You paste a four-line MCP entry yourself.</td></tr>
+          <tr><th scope="row">Agent surface</th><td class="them">About 100 tools, including ones that launch browsers and processes.</td><td class="us">4 read-only tools, limited to directories you pass with <code>--allow-root</code>. Target text is fenced with a random nonce so it cannot pose as instructions.</td></tr>
+          <tr><th scope="row">Proof</th><td class="them">Returns evidence and limitations per result.</td><td class="us">Every row links to file and line, with the file's SHA-256, a ledger of every file read, and a content hash that is identical on re-runs.</td></tr>
+          <tr><th scope="row">Customizing</th><td class="them">Workflows are written in TypeScript inside the tool.</td><td class="us">Reports are TOML templates: pick questions and views, no code.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="fair">
+      <span class="eyebrow">Where REA wins</span>
+      <p>REA can decompile native code through Ghidra, IDA, and Hopper, observe running browsers and Electron apps, and drive Android devices. Clearbox does none of that. Use Clearbox first to map the target and decide what deserves deeper work, then run a decompiler inside a disposable VM.</p>
+    </div>
+  </section>
+
+  <section class="block" id="templates">
+    <div class="head">
+      <div><span class="eyebrow">Templates</span><h2 style="margin-top:14px">Ask a question, get a report.</h2></div>
+      <p>A template is a list of questions, each answered by views from the analyzers. Five ship built in. Writing your own takes a minute and no code.</p>
+    </div>
+    <div class="tpl">
+      <ul>
+        <li><code>overview</code><span>What is it made of, how is it organized, where is the weight, and how do you get in?</span></li>
+        <li><code>feature-trace</code><span>Where does a feature live, how is it reached, what does it need, and in what order do you rebuild it?</span></li>
+        <li><code>security-surface</code><span>Processes, network, files, privileges, secrets (redacted), and text aimed at AI agents.</span></li>
+        <li><code>dependency-audit</code><span>Declared versus actually imported, unused packages, and install-time scripts.</span></li>
+        <li><code>binary-triage</code><span>ELF, PE, Mach-O, WASM, DEX, and archives: architecture, sections, entropy, strings.</span></li>
+      </ul>
+      <div class="code">
+        <div class="cap"><span>handoff.toml</span><button class="copy" type="button" data-copy="tpl">Copy</button></div>
+<pre id="tpl"><span class="c"># Your own report: run with  -t handoff.toml</span>
+id = "handoff"
+name = "New-engineer handoff"
+summary = "What a new teammate needs on day one."
+
+[[sections]]
+title = "Where do I start reading?"
+views = [<span class="hl">"surface.entrypoints"</span>, <span class="hl">"imports.hubs"</span>]
+
+[[sections]]
+title = "What can break production?"
+views = [<span class="hl">"risk.summary"</span>, <span class="hl">"surface.env"</span>]</pre>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="evidence">
+    <div class="head">
+      <div><span class="eyebrow">Visibility</span><h2 style="margin-top:14px">Every claim says how it knows.</h2></div>
+      <p>Reports label each view with how its facts were established, so you know which ones to double-check.</p>
+    </div>
+    <div class="pills">
+      <div class="pill"><b class="p">parsed</b><p>Read by a real parser: Python's <code>ast</code>, JSON, TOML, or binary headers. Treat these as facts about the bytes.</p></div>
+      <div class="pill"><b class="r">pattern</b><p>Matched a documented regular expression. Click the row to see the exact line and judge it yourself.</p></div>
+      <div class="pill"><b class="h">heuristic</b><p>Inferred from scores or graph shape, like which files make up a feature. Use these as a starting point.</p></div>
+    </div>
+    <div class="ledger">
+      <div><h3>Ledger</h3><p>Every file read, its byte count, its SHA-256, and which analyzers used it.</p></div>
+      <div><h3>Blind spots</h3><p>Dynamic imports, aliases, oversized files, and other things the run could not see.</p></div>
+      <div><h3>Reproducible</h3><p>The same input gives the same content hash, so two people can confirm they reviewed the same thing.</p></div>
+      <div><h3>Self-contained</h3><p>HTML reports carry a strict CSP: no external requests, and target text is never parsed as markup.</p></div>
+    </div>
+  </section>
+
+  <section class="block" id="install">
+    <div class="head">
+      <div><span class="eyebrow">Install</span><h2 style="margin-top:14px">Python 3.11 and a folder.</h2></div>
+      <p>Clone or extract the target first. Clearbox never fetches anything for you, which keeps the network out of the picture.</p>
+    </div>
+    <div class="steps">
+      <div>
+        <div class="code"><div class="cap"><span>terminal</span><button class="copy" type="button" data-copy="cli">Copy</button></div>
+<pre id="cli">pip install git+https://github.com/vosbek/reverse-enginer-rea
+clearbox scan ./some-app                    <span class="c"># overview</span>
+clearbox scan ./some-app -t security-surface
+clearbox trace ./some-app "search notes"    <span class="c"># feature trace</span>
+clearbox templates                          <span class="c"># list templates</span></pre></div>
+        <p>Reports land in <code>clearbox-reports/</code> as HTML, Markdown, and JSON. Clearbox refuses to write inside the target.</p>
+      </div>
+      <div>
+        <div class="code"><div class="cap"><span>MCP config for your agent</span><button class="copy" type="button" data-copy="mcp">Copy</button></div>
+<pre id="mcp">{
+  "mcpServers": {
+    "clearbox": {
+      "command": "clearbox",
+      "args": ["mcp", "--allow-root", "/path/to/targets"]
+    }
+  }
+}</pre></div>
+        <p>The agent gets four read-only tools and can only see what is under <code>--allow-root</code>.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Clearbox · MIT · built as a safer take on <a href="https://github.com/morluto/rea">REA</a>. Demo reports are generated by CI from a pinned REA commit.</span>
+    <a href="https://github.com/vosbek/reverse-enginer-rea">Source on GitHub</a>
+  </footer>
+</div>
+<script>
+document.querySelectorAll('.copy').forEach(btn => btn.addEventListener('click', async () => {
+  const text = document.getElementById(btn.dataset.copy).textContent;
+  try { await navigator.clipboard.writeText(text); btn.textContent = 'Copied'; }
+  catch (e) { const r = document.createRange(); r.selectNodeContents(document.getElementById(btn.dataset.copy)); const s = getSelection(); s.removeAllRanges(); s.addRange(r); btn.textContent = 'Selected'; }
+  setTimeout(() => { btn.textContent = 'Copy'; }, 1600);
+}));
+</script>
+</body>
+</html>

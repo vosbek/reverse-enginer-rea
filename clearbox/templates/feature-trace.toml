@@ -1,0 +1,33 @@
+id = "feature-trace"
+name = "Feature trace"
+summary = "Find where a feature lives, how execution reaches it, what it depends on, and a leaves-first plan to rebuild it."
+
+[[params]]
+name = "feature"
+required = true
+help = "Plain words for the feature, ideally including identifiers you have seen in the UI, logs, or docs."
+
+[[sections]]
+title = "Where it lives"
+question = "Which files implement the feature, and what is the evidence?"
+views = ["trace.seeds", "trace.neighborhood"]
+
+[[sections]]
+title = "How you reach it"
+question = "Which import chains lead from top-level files to the feature?"
+views = ["trace.flow"]
+
+[[sections]]
+title = "What it needs"
+question = "Packages, configuration, and host capabilities the feature depends on."
+views = ["trace.packages", "trace.config", "trace.capabilities"]
+
+[[sections]]
+title = "How to rebuild it"
+question = "In what order should the pieces be rebuilt, and which tests describe the original behavior?"
+views = ["trace.blueprint", "trace.tests"]
+
+[[sections]]
+title = "Open questions"
+question = "What should be confirmed before relying on this reading?"
+views = ["trace.questions"]

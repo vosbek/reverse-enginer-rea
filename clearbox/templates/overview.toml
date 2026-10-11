@@ -1,0 +1,38 @@
+id = "overview"
+name = "Architecture overview"
+summary = "Map an unfamiliar codebase: what it is made of, how it is organized, what it depends on, how you get in, and what it can do to the machine."
+
+[[sections]]
+title = "What is it made of?"
+question = "How big is it, in which languages, and how much of it is tests?"
+views = ["inventory.stats", "inventory.languages"]
+
+[[sections]]
+title = "How is it organized?"
+question = "What are the major areas, and which areas depend on which?"
+views = ["inventory.areas", "imports.stats", "imports.matrix"]
+
+[[sections]]
+title = "Where is the weight?"
+question = "Which files would break the most if they changed, and which are largest?"
+views = ["imports.hubs", "inventory.largest", "imports.cycles"]
+
+[[sections]]
+title = "What does it stand on?"
+question = "Which third-party packages does it declare, and which does it actually use?"
+views = ["manifests.stats", "imports.external", "manifests.locks"]
+
+[[sections]]
+title = "How do you get in?"
+question = "Entry points, commands, agent tools, and HTTP routes a user or another program can call."
+views = ["surface.entrypoints", "surface.cli", "surface.tools", "surface.routes"]
+
+[[sections]]
+title = "What can it do to your machine?"
+question = "Process, network, filesystem, and privilege capabilities found in production code."
+views = ["risk.summary", "risk.by_area"]
+
+[[sections]]
+title = "What changes its behavior?"
+question = "Environment variables the code reads."
+views = ["surface.env"]

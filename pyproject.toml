@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "clearbox"
+version = "0.1.0"
+description = "Static, evidence-first reverse engineering. Reads files; never runs, installs, or connects."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.11"
+dependencies = []
+keywords = ["reverse-engineering", "static-analysis", "mcp", "security", "architecture"]
+
+[project.scripts]
+clearbox = "clearbox.cli:main"
+
+[tool.setuptools]
+packages = ["clearbox", "clearbox.analyzers", "clearbox.render"]
+
+[tool.setuptools.package-data]
+clearbox = ["templates/*.toml"]

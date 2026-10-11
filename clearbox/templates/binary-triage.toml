@@ -1,0 +1,18 @@
+id = "binary-triage"
+name = "Binary triage"
+summary = "Identify every opaque file: format, architecture, sections, entropy, and the strings that hint at what it does. Headers only; nothing is executed."
+
+[[sections]]
+title = "What is in here?"
+question = "Which formats, and how much of the target is opaque?"
+views = ["inventory.stats", "binary.formats"]
+
+[[sections]]
+title = "Executables and archives"
+question = "Architecture, kind, entropy, and notable properties of each binary."
+views = ["binary.files", "binary.sections"]
+
+[[sections]]
+title = "Strings"
+question = "URLs, paths, libraries, and type names embedded in the binaries."
+views = ["binary.strings"]
