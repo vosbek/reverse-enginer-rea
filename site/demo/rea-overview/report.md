@@ -2,7 +2,7 @@
 
 Map an unfamiliar codebase: what it is made of, how it is organized, what it depends on, how you get in, and what it can do to the machine.
 
-Clearbox 0.1.0 · 2,757 files read · 14.39s · ledger `5fed102b0b2f1991` · content `b10aecf811565ac6`
+Clearbox 0.2.0 · 2,757 files read · 14.95s · ledger `5fed102b0b2f1991` · content `43cf53e9ed3078d7`
 
 ## What is it made of?
 

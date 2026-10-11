@@ -9,7 +9,7 @@ SHA-256 of the bytes it read.
 It is a static, zero-dependency alternative to [REA](https://github.com/morluto/rea) for the first,
 and often the only, pass over unfamiliar code. Case studies: REA itself, and Spotify's Windows
 installer rebuilt as [mySpotify](https://github.com/vosbek/my-spotify). Live site with demo reports:
-https://vosbek.github.io/reverse-enginer-rea/
+https://vosbek.github.io/reverse-enginer-rea/ (case studies: [Spotify for Windows](https://vosbek.github.io/reverse-enginer-rea/case-studies/spotify/), [REA](https://vosbek.github.io/reverse-enginer-rea/case-studies/rea/))
 
 ## Install
 

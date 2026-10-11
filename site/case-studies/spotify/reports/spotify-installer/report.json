@@ -1,5 +1,5 @@
 {
- "clearbox": "0.1.0",
+ "clearbox": "0.2.0",
  "manifest": {
   "target": "SpotifySetup.exe",
   "template": {
@@ -9,11 +9,11 @@
    "sha256": "19c7d5ecd2b541310eaa9ab0dfc87b1cc69aeb02f116197e0c6d4fbc1e8a7491"
   },
   "params": {},
-  "started": "2026-10-11T18:14:13+00:00",
-  "duration_s": 0.14,
+  "started": "2026-10-11T18:55:08+00:00",
+  "duration_s": 0.15,
   "analyzers": {
    "inventory": 0.0,
-   "binary": 0.139
+   "binary": 0.15
   },
   "python": "3.13.16",
   "limits": {
@@ -36,7 +36,7 @@
    "Accountable: every file read is listed in the ledger with its SHA-256."
   ],
   "severity_counts": {},
-  "content_sha256": "5e373fe6bd9c29056b869ddd3871cfd41165f87e42e357eac8209c1d1beba85b"
+  "content_sha256": "dd2ada1f585111ff4267fa90057e3a9f740d6a4aea145350b1cf116c4176d82b"
  },
  "sections": [
   {

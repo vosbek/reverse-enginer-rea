@@ -1,5 +1,5 @@
 {
- "clearbox": "0.1.0",
+ "clearbox": "0.2.0",
  "manifest": {
   "target": "vosbek/my-spotify",
   "template": {
@@ -9,12 +9,12 @@
    "sha256": "9dc26dc671b4dfcd9b51d7a4753cec0d03cc88fb8c650daf283e62cf631e8714"
   },
   "params": {},
-  "started": "2026-10-11T18:23:57+00:00",
-  "duration_s": 0.07,
+  "started": "2026-10-11T18:55:08+00:00",
+  "duration_s": 0.06,
   "analyzers": {
-   "risk": 0.052,
+   "risk": 0.05,
    "manifests": 0.0,
-   "surface": 0.014
+   "surface": 0.011
   },
   "python": "3.13.16",
   "limits": {
@@ -23,10 +23,10 @@
    "max_binary_bytes": 67108864,
    "max_total_bytes": 2147483648
   },
-  "files_seen": 13,
-  "files_read": 9,
-  "bytes_read": 93156,
-  "ledger_sha256": "6c9d00e3c8c5d80a11df636f246afa0c1c9c7d558ac4ddcfbae3d399073e844c",
+  "files_seen": 19,
+  "files_read": 11,
+  "bytes_read": 130064,
+  "ledger_sha256": "621ae81dd2367695c5aa2e61f535902e45ecd55ac07fd6912d125dbdf2f4afa9",
   "safety": [
    "Read-only: target files are opened O_RDONLY and never modified.",
    "No execution: nothing from the target is run, imported, or evaluated. Python is parsed with ast.parse.",
@@ -39,7 +39,7 @@
   "severity_counts": {
    "medium": 2
   },
-  "content_sha256": "f3186cce5eea0200cb3c0b323f3dae286c9f43307c44741a6fe25e54d006d6b9",
+  "content_sha256": "a3a24d10a41795ac9d16e3aee2fce66a1acb3250583de4010dab3a6258a7b1d4",
   "link_template": "https://github.com/vosbek/my-spotify/blob/HEAD/{path}#L{line}"
  },
  "sections": [
@@ -557,9 +557,9 @@
        "_ev": [
         {
          "path": "myspotify.py",
-         "line": 83,
+         "line": 86,
          "snippet": "if os.environ.get(\"MYSPOTIFY_VERBOSE\"):",
-         "sha256": "d4d8ceda42c17b8ae3b11969e9b2ce1defe35472ab7e9e67f26e41254fe6c241"
+         "sha256": "c9e5b8d32641f15c0fed2ab8d107957c7de76ff82a4845cf879887f6fff17ccc"
         }
        ]
       }
@@ -613,12 +613,41 @@
  "skipped": [],
  "ledger": [
   {
+   "path": ".github/workflows/windows-exe.yml",
+   "size": 3763,
+   "mode": "read",
+   "sha256": "493a21c2fc376bd95308ac3a6bfc9b761e5c197a9ee780bd05b2f7f5899c6b2c",
+   "readers": [
+    "inventory",
+    "risk"
+   ]
+  },
+  {
    "path": ".gitignore",
-   "size": 46,
+   "size": 90,
    "mode": "sniff",
    "sha256": null,
    "readers": [
     "inventory"
+   ]
+  },
+  {
+   "path": "LICENSE",
+   "size": 1063,
+   "mode": "sniff",
+   "sha256": null,
+   "readers": [
+    "inventory"
+   ]
+  },
+  {
+   "path": "README.md",
+   "size": 6808,
+   "mode": "read",
+   "sha256": "b7c7b2beac68fe82ef901fcd31933193cfb11da00e89a38379677ade61c3b3e1",
+   "readers": [
+    "inventory",
+    "risk"
    ]
   },
   {
@@ -714,10 +743,37 @@
    ]
   },
   {
+   "path": "docs/home.png",
+   "size": 127581,
+   "mode": "sniff",
+   "sha256": null,
+   "readers": [
+    "inventory"
+   ]
+  },
+  {
+   "path": "docs/playlist.png",
+   "size": 139486,
+   "mode": "sniff",
+   "sha256": null,
+   "readers": [
+    "inventory"
+   ]
+  },
+  {
+   "path": "docs/setup.png",
+   "size": 270579,
+   "mode": "sniff",
+   "sha256": null,
+   "readers": [
+    "inventory"
+   ]
+  },
+  {
    "path": "myspotify.py",
-   "size": 4891,
+   "size": 5545,
    "mode": "read",
-   "sha256": "d4d8ceda42c17b8ae3b11969e9b2ce1defe35472ab7e9e67f26e41254fe6c241",
+   "sha256": "c9e5b8d32641f15c0fed2ab8d107957c7de76ff82a4845cf879887f6fff17ccc",
    "readers": [
     "inventory",
     "risk",

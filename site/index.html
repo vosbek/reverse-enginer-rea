@@ -4,344 +4,260 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Clearbox</title>
-<meta name="description" content="Clearbox reverse engineers a codebase or binary without running it. Every claim points to a file, a line, and a SHA-256.">
+<meta name="description" content="Clearbox explains how any codebase or binary works without running it. Every claim cites a file, a line, and the SHA-256 of the bytes it read.">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
-<style>
-/* Layout: a light table. Wide editorial hero, then evidence-led sections on a 12-col grid; specimen tags carry the proof. */
-:root{
-  --paper:#eef2f3; --sheet:#f9fbfb; --ink:#14232b; --muted:#53646c; --rule:#cbd5d9;
-  --accent:#0e6e78; --accent-ink:#ffffff; --mark:#f4d94a; --mark-ink:#14232b;
-  --warn:#a8620a; --bad:#b4332b; --good:#2f6b3a;
-  --display:"Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
-  --body:"IBM Plex Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
-  --mono:"IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-}
-@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
-  --paper:#0e171c; --sheet:#142229; --ink:#dbe5e9; --muted:#93a5ad; --rule:#28383f;
-  --accent:#5cc4cf; --accent-ink:#0e171c; --mark:#e6cb3c; --mark-ink:#0e171c;
-  --warn:#e0a24a; --bad:#ef7a70; --good:#8fcf8a; color-scheme:dark }}
-:root[data-theme="dark"]{
-  --paper:#0e171c; --sheet:#142229; --ink:#dbe5e9; --muted:#93a5ad; --rule:#28383f;
-  --accent:#5cc4cf; --accent-ink:#0e171c; --mark:#e6cb3c; --mark-ink:#0e171c;
-  --warn:#e0a24a; --bad:#ef7a70; --good:#8fcf8a; color-scheme:dark }
-*{box-sizing:border-box}
-html{scroll-behavior:smooth}
-@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
-body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.6 var(--body)}
-a{color:var(--accent)}
-:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
-.wrap{max-width:1180px;margin:0 auto;padding-inline:clamp(16px,4vw,40px)}
-code,pre,.mono{font-family:var(--mono)}
-.eyebrow{font:600 12px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
-h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0}
-h2{font-size:clamp(30px,4.2vw,48px);line-height:1.04;font-weight:800;letter-spacing:-.02em}
-h3{font-size:21px;line-height:1.2;font-weight:700}
-p{margin:0}
-.mark{background:var(--mark);color:var(--mark-ink);padding:0 .12em;border-radius:2px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
-
-/* header */
-.top{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;padding-block:22px}
-.brand{display:flex;align-items:center;gap:10px;font:800 21px/1 var(--display);color:var(--ink);text-decoration:none;letter-spacing:-.01em}
-.glyph{width:22px;height:22px;border:2.5px solid var(--ink);position:relative;display:inline-block}
-.glyph::after{content:"";position:absolute;inset:4px;background:var(--mark);border:1.5px solid var(--ink)}
-nav.links{display:flex;gap:4px 20px;flex-wrap:wrap;font-size:15px}
-nav.links a{color:var(--muted);text-decoration:none}
-nav.links a:hover{color:var(--ink)}
-
-/* hero */
-.hero{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:clamp(28px,5vw,64px);align-items:center;padding-block:clamp(28px,6vw,72px) clamp(40px,6vw,80px)}
-.hero h1{font-size:clamp(46px,7.6vw,96px);line-height:.93;font-weight:800;letter-spacing:-.035em}
-.hero .lede{font-size:clamp(17px,1.6vw,20px);color:var(--muted);max-width:34em;margin-top:24px}
-.cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:30px}
-.btn{display:inline-flex;align-items:center;gap:8px;font:600 15px/1 var(--body);padding:13px 18px;border-radius:3px;text-decoration:none;border:1.5px solid var(--ink);color:var(--ink)}
-.btn.primary{background:var(--ink);color:var(--paper)}
-.btn:hover{transform:translateY(-1px)}
-@media (prefers-reduced-motion:no-preference){.btn{transition:transform .12s}}
-.facts{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:26px;font:13px/1.4 var(--mono);color:var(--muted)}
-.facts b{color:var(--ink)}
-
-/* specimen tags */
-.tags{display:grid;gap:14px;min-width:0}
-.tag{background:var(--sheet);border:1px solid var(--rule);position:relative;min-width:0;box-shadow:0 1px 0 var(--rule)}
-.tag:nth-child(2){margin-left:clamp(0px,3vw,28px)}
-.tag:nth-child(3){margin-left:clamp(0px,1.5vw,14px)}
-.tag .hd{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:9px 12px;border-bottom:1px dashed var(--rule);font:600 11px/1.3 var(--mono);letter-spacing:.06em;text-transform:uppercase}
-.sev{color:var(--bad)} .sev.m{color:var(--warn)}
-.tag .conf{color:var(--muted)}
-.tag .line{display:grid;grid-template-columns:auto minmax(0,1fr);font:13px/1.5 var(--mono)}
-.tag .loc{background:var(--mark);color:var(--mark-ink);padding:8px 10px;font-weight:600;white-space:nowrap}
-.tag .loc a{color:inherit}
-.tag code{padding:8px 12px;white-space:pre-wrap;overflow-wrap:anywhere}
-.tag .ft{padding:7px 12px;border-top:1px solid var(--rule);font:11px/1.4 var(--mono);color:var(--muted);overflow-wrap:anywhere}
-.tag::before{content:"";position:absolute;left:-7px;top:16px;width:12px;height:12px;border-radius:50%;background:var(--paper);border:1px solid var(--rule)}
-
-section.block{padding-block:clamp(48px,7vw,96px);border-top:1px solid var(--rule)}
-.head{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px 56px;align-items:end;margin-bottom:40px}
-.head p{color:var(--muted);font-size:18px;max-width:36em}
-
-/* case study numbers */
-.numbers{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid var(--rule);background:var(--rule);gap:1px}
-.num{background:var(--sheet);padding:18px 18px 16px;display:grid;gap:4px;align-content:start}
-.num .v{font:800 clamp(30px,3.4vw,44px)/1 var(--display);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
-.num .l{font-size:14px;color:var(--muted)}
-.found{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:28px;margin-top:44px}
-.found article{display:grid;gap:10px;align-content:start;min-width:0}
-.found .k{font:600 12px var(--mono);color:var(--accent);letter-spacing:.08em;text-transform:uppercase}
-.found p{color:var(--muted)}
-.found code{font-size:13px;background:var(--sheet);border:1px solid var(--rule);padding:1px 5px;color:var(--ink);overflow-wrap:anywhere}
-.reports{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-top:44px}
-.report{display:grid;gap:8px;align-content:start;padding:16px;border:1px solid var(--rule);background:var(--sheet);text-decoration:none;color:var(--ink);min-width:0}
-.report:hover{border-color:var(--accent)}
-.report .t{font:700 17px/1.2 var(--display)}
-.report .d{font-size:14px;color:var(--muted)}
-.report .go{font:600 12px var(--mono);color:var(--accent)}
-
-/* comparison */
-.cmpwrap{overflow-x:auto;border:1px solid var(--rule);background:var(--sheet)}
-table.cmp{border-collapse:collapse;width:100%;min-width:720px;font-size:15px}
-.cmp th,.cmp td{padding:14px 16px;text-align:left;vertical-align:top;border-bottom:1px solid var(--rule)}
-.cmp thead th{font:600 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:var(--paper)}
-.cmp tbody th{font-weight:600;width:20%}
-.cmp td.them{color:var(--muted);width:40%}
-.cmp td.us{width:40%}
-.cmp td.us::before{content:"";display:inline-block;width:8px;height:8px;background:var(--accent);margin-right:8px;vertical-align:1px}
-.cmp a{white-space:nowrap}
-.fair{margin-top:22px;display:grid;grid-template-columns:auto minmax(0,1fr);gap:16px;padding:18px;border:1.5px dashed var(--rule)}
-.fair .eyebrow{padding-top:4px}
-.fair p{color:var(--muted);max-width:62em}
-
-/* templates */
-.tpl{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:40px;align-items:start}
-.tpl ul{list-style:none;margin:0;padding:0;display:grid;border-top:1px solid var(--rule)}
-.tpl li{display:grid;grid-template-columns:170px minmax(0,1fr);gap:4px 16px;padding:14px 0;border-bottom:1px solid var(--rule)}
-.tpl li code{font-weight:600;color:var(--accent)}
-.tpl li span{color:var(--muted)}
-.code{position:relative;background:var(--ink);color:var(--paper);border-radius:3px;min-width:0}
-.code pre{margin:0;padding:18px 18px;overflow-x:auto;font:13.5px/1.6 var(--mono)}
-.code .cap{display:flex;justify-content:space-between;align-items:center;padding:8px 10px 8px 18px;border-bottom:1px solid color-mix(in srgb,var(--paper) 18%,transparent);font:12px var(--mono);color:color-mix(in srgb,var(--paper) 70%,transparent)}
-.copy{font:600 12px var(--mono);background:transparent;color:inherit;border:1px solid color-mix(in srgb,var(--paper) 35%,transparent);border-radius:3px;padding:4px 8px;cursor:pointer}
-.c{color:color-mix(in srgb,var(--paper) 55%,transparent)}
-.hl{color:var(--mark)}
-
-/* evidence model */
-.pills{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
-.pill{border:1px solid var(--rule);background:var(--sheet);padding:18px;display:grid;gap:8px;align-content:start}
-.pill b{font:600 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;border:1px solid currentColor;border-radius:999px;padding:3px 8px;justify-self:start}
-.pill b.p{color:var(--accent)} .pill b.r{color:var(--warn)} .pill b.h{color:var(--muted)}
-.pill p{color:var(--muted);font-size:15px}
-.ledger{margin-top:28px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:20px}
-.ledger div{display:grid;gap:4px}
-.ledger h3{font-size:17px}
-.ledger p{font-size:15px;color:var(--muted)}
-
-/* install */
-.steps{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
-.steps .code + p{margin-top:10px;color:var(--muted);font-size:15px}
-footer{border-top:1px solid var(--rule);padding-block:30px 48px;color:var(--muted);font-size:14px;display:flex;flex-wrap:wrap;gap:8px 28px;justify-content:space-between}
-
-@media (max-width:900px){
-  .hero,.head,.tpl,.steps{grid-template-columns:minmax(0,1fr)}
-  .found{grid-template-columns:minmax(0,1fr)}
-  .numbers{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .pills,.ledger{grid-template-columns:minmax(0,1fr)}
-  .tag:nth-child(n){margin-left:0}
-}
-@media (max-width:520px){ .tpl li{grid-template-columns:minmax(0,1fr)} .fair{grid-template-columns:minmax(0,1fr)} }
-</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Schibsted+Grotesk:wght@600;700;800&display=swap">
+<link rel="stylesheet" href="assets/site.css">
 </head>
 <body>
-<div class="wrap">
-  <header class="top">
-    <a class="brand" href="./"><span class="glyph" aria-hidden="true"></span>Clearbox</a>
-    <nav class="links" aria-label="Sections">
-      <a href="#case-study">Case studies</a>
-      <a href="#compare">Compare</a>
-      <a href="#templates">Templates</a>
-      <a href="#evidence">Evidence</a>
+<header class="nav">
+  <div class="container">
+    <a class="logo" href="./"><i aria-hidden="true"></i>Clearbox</a>
+    <nav class="nav-links" aria-label="Main">
+      <a href="how-it-works/">How it works</a>
+      <a href="case-studies/spotify/">Spotify case study</a>
+      <a href="case-studies/rea/">REA case study</a>
       <a href="#install">Install</a>
-      <a href="https://github.com/vosbek/reverse-enginer-rea">GitHub</a>
     </nav>
-  </header>
+    <a class="btn small gh" href="https://github.com/vosbek/reverse-enginer-rea">GitHub</a>
+    <button class="nav-toggle" type="button" aria-expanded="false">Menu</button>
+  </div>
+</header>
 
+<main>
   <section class="hero">
-    <div>
-      <span class="eyebrow">Static reverse engineering</span>
-      <h1 style="margin-top:18px">Reverse engineer anything. <span class="mark">Run nothing.</span></h1>
-      <p class="lede">Clearbox reads a codebase or a folder of binaries and explains how it works: its architecture, how a feature is wired, what it can do to your machine, and how to rebuild it. Every claim points to a file, a line, and the SHA-256 of the bytes it read.</p>
-      <div class="cta">
-        <a class="btn primary" href="demo/rea-trace-setup/">See a real trace</a>
-        <a class="btn" href="#install">Install in one line</a>
-      </div>
-      <div class="facts">
-        <span><b>0</b> runtime dependencies</span>
-        <span><b>0</b> processes spawned</span>
-        <span><b>0</b> network calls</span>
-        <span><b>~3,000</b> lines you can audit in an afternoon</span>
-      </div>
-    </div>
-    <div class="tags" aria-label="Three findings from the REA scan, with evidence">
-      <div class="tag">
-        <div class="hd"><span class="sev">High · requests elevated privileges</span><span class="conf">pattern</span></div>
-        <div class="line"><span class="loc"><a href="https://github.com/morluto/rea/blob/a95795c6ed3cb149e03460f4c818ad12e0c670d9/src/application/LinuxHopper.ts#L337">LinuxHopper.ts:337</a></span><code>const executable = isRoot ? command[0] : "pkexec";</code></div>
-        <div class="ft">morluto/rea · sha256 b45f18669881fb28…</div>
-      </div>
-      <div class="tag">
-        <div class="hd"><span class="sev m">Medium · installs system software</span><span class="conf">pattern</span></div>
-        <div class="line"><span class="loc"><a href="https://github.com/morluto/rea/blob/a95795c6ed3cb149e03460f4c818ad12e0c670d9/src/application/LinuxHopper.ts#L329">LinuxHopper.ts:329</a></span><code>? [["apt-get", "install", "-y", archive, ...runtimeDependencies]]</code></div>
-        <div class="ft">morluto/rea · sha256 b45f18669881fb28…</div>
-      </div>
-      <div class="tag">
-        <div class="hd"><span class="sev m">Medium · runs code at install time</span><span class="conf">parsed</span></div>
-        <div class="line"><span class="loc"><a href="https://github.com/morluto/rea/blob/a95795c6ed3cb149e03460f4c818ad12e0c670d9/package.json">package.json</a></span><code>"prepare": "node scripts/prepare.mjs"</code></div>
-        <div class="ft">morluto/rea · read by the manifests analyzer</div>
-      </div>
-    </div>
-  </section>
-
-  <section class="block" id="case-study">
-    <div class="head">
-      <div><span class="eyebrow">Case study 01</span><h2 style="margin-top:14px">We pointed Clearbox at REA.</h2></div>
-      <p>REA (“Reverse Engineer Anything”) is a popular MCP server for agent-driven reverse engineering. We scanned commit <code class="mono">a95795c</code> to understand what it is and what it does to the machine it runs on. It took 14 seconds and nothing ran.</p>
-    </div>
-    <div class="numbers">
-      <div class="num"><span class="v">504,490</span><span class="l">lines of code across 2,530 source files (43% tests)</span></div>
-      <div class="num"><span class="v">561</span><span class="l">locked npm packages behind 38 declared runtime dependencies</span></div>
-      <div class="num"><span class="v">103</span><span class="l">agent tool names declared in source</span></div>
-      <div class="num"><span class="v">185</span><span class="l">high-severity capability sites in production code</span></div>
-    </div>
-    <div class="found">
-      <article>
-        <span class="k">Process control</span>
-        <h3>It launches programs and drives terminals.</h3>
-        <p>Process-spawning calls appear in 106 non-test files, and 5 files drive an interactive terminal through <code>node-pty</code>. That is how REA runs Ghidra, Hopper, and the targets themselves. It also means a malicious target gets the same user permissions.</p>
-      </article>
-      <article>
-        <span class="k">Host changes</span>
-        <h3>It can install software as root.</h3>
-        <p>The Linux Hopper installer calls <code>apt-get</code>, <code>dnf</code>, or <code>pacman</code> and escalates with <code>pkexec</code>. REA documents this and asks first. Clearbox found it in one file, with line numbers, before anything was installed.</p>
-      </article>
-      <article>
-        <span class="k">Feature trace</span>
-        <h3>Its setup edits your agents' config.</h3>
-        <p>Tracing “setup agent client configuration” lands on 10 seed files reached from <code>scripts/rea.mjs → src/cli.ts → src/cli/setupCommands.ts</code>, plus a 10-step rebuild plan, 32 environment variables, and 36 test files that pin the behavior.</p>
-      </article>
-    </div>
-    <div class="reports">
-      <a class="report" href="demo/rea-overview/"><span class="t">Architecture overview</span><span class="d">Areas, import matrix, hubs, cycles, entry points.</span><span class="go">Open report →</span></a>
-      <a class="report" href="demo/rea-security/"><span class="t">Security surface</span><span class="d">Every host-touching capability, line by line.</span><span class="go">Open report →</span></a>
-      <a class="report" href="demo/rea-trace-setup/"><span class="t">Feature trace: setup</span><span class="d">Where it lives, how it's reached, how to rebuild it.</span><span class="go">Open report →</span></a>
-      <a class="report" href="demo/rea-dependencies/"><span class="t">Dependency audit</span><span class="d">Declared versus imported, and install hooks.</span><span class="go">Open report →</span></a>
-      <a class="report" href="demo/clearbox-self/"><span class="t">Clearbox on itself</span><span class="d">Same rules, our own code. Its only real capability is writing the report.</span><span class="go">Open report →</span></a>
-    </div>
-  </section>
-
-  <section class="block" id="case-study-2">
-    <div class="head">
-      <div><span class="eyebrow">Case study 02</span><h2 style="margin-top:14px">From Spotify's installer to our own player.</h2></div>
-      <p>We triaged <code class="mono">SpotifySetup.exe</code> without running it. It turned out to be a signed downloader stub that loads its network library at runtime and coordinates with an updater through named mutexes. Then we built mySpotify on the official API and scanned our own code with the same rules.</p>
-    </div>
-    <div class="reports">
-      <a class="report" href="case-studies/myspotify/"><span class="t">Read the case study</span><span class="d">Installer findings, feature map, build, and verification.</span><span class="go">Open →</span></a>
-      <a class="report" href="case-studies/myspotify/reports/spotify-installer/"><span class="t">SpotifySetup.exe triage</span><span class="d">Imports, signature, capabilities, UTF-16 strings.</span><span class="go">Open report →</span></a>
-      <a class="report" href="https://github.com/vosbek/my-spotify"><span class="t">mySpotify</span><span class="d">Run it on Windows in five steps. Premium required.</span><span class="go">GitHub →</span></a>
-    </div>
-  </section>
-
-  <section class="block" id="compare">
-    <div class="head">
-      <div><span class="eyebrow">Side by side</span><h2 style="margin-top:14px">What runs on your machine?</h2></div>
-      <p>Reverse-engineering tools open untrusted code by definition. The safest one does the most it can without executing anything, and tells you exactly what it read.</p>
-    </div>
-    <div class="cmpwrap">
-      <table class="cmp">
-        <thead><tr><th scope="col"></th><th scope="col">REA 6.4</th><th scope="col">Clearbox 0.1</th></tr></thead>
-        <tbody>
-          <tr><th scope="row">Install footprint</th><td class="them">38 runtime dependencies, 561 locked packages, plus a <code>prepare</code> script that runs on install.</td><td class="us">Python standard library only. No dependencies, no install scripts.</td></tr>
-          <tr><th scope="row">Code you would audit</th><td class="them">About 290,000 lines of non-test TypeScript, Java, Python, and Swift.</td><td class="us">About 3,000 lines of Python, plus five TOML templates.</td></tr>
-          <tr><th scope="row">Runs the target?</th><td class="them">Runtime capture “runs or interacts with the selected target using your user permissions” (REA README).</td><td class="us">Never. Python is parsed with <code>ast</code>, binaries are decoded with <code>struct</code>. A test fails the build if the package imports <code>subprocess</code>, <code>socket</code>, or calls <code>eval</code>.</td></tr>
-          <tr><th scope="row">Sandbox</th><td class="them">“This is not a sandbox” (REA SECURITY.md).</td><td class="us">Read-only jail: paths outside the target are refused, symlinks are never followed, reads use <code>O_NOFOLLOW</code>, sizes are capped.</td></tr>
-          <tr><th scope="row">Privileges and installs</th><td class="them">Can install Hopper and its dependencies through <code>pkexec</code> after asking.</td><td class="us">No privilege requests and no installs, ever.</td></tr>
-          <tr><th scope="row">Agent setup</th><td class="them">Setup edits agent configuration files (with a plan, approval, and backups).</td><td class="us">Prints nothing into your configs. You paste a four-line MCP entry yourself.</td></tr>
-          <tr><th scope="row">Agent surface</th><td class="them">About 100 tools, including ones that launch browsers and processes.</td><td class="us">4 read-only tools, limited to directories you pass with <code>--allow-root</code>. Target text is fenced with a random nonce so it cannot pose as instructions.</td></tr>
-          <tr><th scope="row">Proof</th><td class="them">Returns evidence and limitations per result.</td><td class="us">Every row links to file and line, with the file's SHA-256, a ledger of every file read, and a content hash that is identical on re-runs.</td></tr>
-          <tr><th scope="row">Customizing</th><td class="them">Workflows are written in TypeScript inside the tool.</td><td class="us">Reports are TOML templates: pick questions and views, no code.</td></tr>
-        </tbody>
-      </table>
-    </div>
-    <div class="fair">
-      <span class="eyebrow">Where REA wins</span>
-      <p>REA can decompile native code through Ghidra, IDA, and Hopper, observe running browsers and Electron apps, and drive Android devices. Clearbox does none of that. Use Clearbox first to map the target and decide what deserves deeper work, then run a decompiler inside a disposable VM.</p>
-    </div>
-  </section>
-
-  <section class="block" id="templates">
-    <div class="head">
-      <div><span class="eyebrow">Templates</span><h2 style="margin-top:14px">Ask a question, get a report.</h2></div>
-      <p>A template is a list of questions, each answered by views from the analyzers. Five ship built in. Writing your own takes a minute and no code.</p>
-    </div>
-    <div class="tpl">
-      <ul>
-        <li><code>overview</code><span>What is it made of, how is it organized, where is the weight, and how do you get in?</span></li>
-        <li><code>feature-trace</code><span>Where does a feature live, how is it reached, what does it need, and in what order do you rebuild it?</span></li>
-        <li><code>security-surface</code><span>Processes, network, files, privileges, secrets (redacted), and text aimed at AI agents.</span></li>
-        <li><code>dependency-audit</code><span>Declared versus actually imported, unused packages, and install-time scripts.</span></li>
-        <li><code>binary-triage</code><span>ELF, PE, Mach-O, WASM, DEX, and archives: architecture, sections, entropy, strings.</span></li>
-      </ul>
-      <div class="code">
-        <div class="cap"><span>handoff.toml</span><button class="copy" type="button" data-copy="tpl">Copy</button></div>
-<pre id="tpl"><span class="c"># Your own report: run with  -t handoff.toml</span>
-id = "handoff"
-name = "New-engineer handoff"
-summary = "What a new teammate needs on day one."
-
-[[sections]]
-title = "Where do I start reading?"
-views = [<span class="hl">"surface.entrypoints"</span>, <span class="hl">"imports.hubs"</span>]
-
-[[sections]]
-title = "What can break production?"
-views = [<span class="hl">"risk.summary"</span>, <span class="hl">"surface.env"</span>]</pre>
-      </div>
-    </div>
-  </section>
-
-  <section class="block" id="evidence">
-    <div class="head">
-      <div><span class="eyebrow">Visibility</span><h2 style="margin-top:14px">Every claim says how it knows.</h2></div>
-      <p>Reports label each view with how its facts were established, so you know which ones to double-check.</p>
-    </div>
-    <div class="pills">
-      <div class="pill"><b class="p">parsed</b><p>Read by a real parser: Python's <code>ast</code>, JSON, TOML, or binary headers. Treat these as facts about the bytes.</p></div>
-      <div class="pill"><b class="r">pattern</b><p>Matched a documented regular expression. Click the row to see the exact line and judge it yourself.</p></div>
-      <div class="pill"><b class="h">heuristic</b><p>Inferred from scores or graph shape, like which files make up a feature. Use these as a starting point.</p></div>
-    </div>
-    <div class="ledger">
-      <div><h3>Ledger</h3><p>Every file read, its byte count, its SHA-256, and which analyzers used it.</p></div>
-      <div><h3>Blind spots</h3><p>Dynamic imports, aliases, oversized files, and other things the run could not see.</p></div>
-      <div><h3>Reproducible</h3><p>The same input gives the same content hash, so two people can confirm they reviewed the same thing.</p></div>
-      <div><h3>Self-contained</h3><p>HTML reports carry a strict CSP: no external requests, and target text is never parsed as markup.</p></div>
-    </div>
-  </section>
-
-  <section class="block" id="install">
-    <div class="head">
-      <div><span class="eyebrow">Install</span><h2 style="margin-top:14px">Python 3.11 and a folder.</h2></div>
-      <p>Clone or extract the target first. Clearbox never fetches anything for you, which keeps the network out of the picture.</p>
-    </div>
-    <div class="steps">
+    <div class="container hero-grid">
       <div>
-        <div class="code"><div class="cap"><span>terminal</span><button class="copy" type="button" data-copy="cli">Copy</button></div>
+        <span class="eyebrow">Static reverse engineering</span>
+        <h1 style="margin-top:16px">See how any codebase or binary works, without running it.</h1>
+        <p class="lead">Clearbox reads a folder of source code or executables and explains it: the architecture, where a feature lives and how to rebuild it, and what the program can do to your machine. Every claim cites a file, a line, and the SHA-256 of the bytes it read.</p>
+        <div class="cta">
+          <a class="btn primary" href="case-studies/spotify/">Read the Spotify case study</a>
+          <a class="btn" href="how-it-works/">How it works</a>
+        </div>
+        <div class="hero-note"><span>Zero dependencies</span><span>Never executes the target</span><span>Reports open offline</span></div>
+      </div>
+      <div class="hero-visual">
+        <div class="frame">
+          <div class="chrome"><i></i><i></i><i></i><span>Feature trace · morluto/rea</span></div>
+          <img src="assets/img/report-trace.webp" alt="A Clearbox feature-trace report listing the files that implement REA's setup feature, with one row expanded to show four highlighted source lines and their SHA-256" width="1440" height="900">
+        </div>
+        <div class="callout-tag"><b>Every row opens to its evidence</b><code>SetupClientConfiguration.ts:266</code><span class="mono" style="color:var(--muted);font-size:12px">sha256 eb0ca7cede23…</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band tint" aria-label="Results">
+    <div class="container">
+      <div class="metrics">
+        <div class="metric"><span class="v">2,757</span><span class="l">files of REA read and cross-referenced in 15 seconds</span></div>
+        <div class="metric"><span class="v">0.1 s</span><span class="l">to decode Spotify's Windows installer: imports, signer, strings</span></div>
+        <div class="metric"><span class="v">0</span><span class="l">programs executed to produce any of it</span></div>
+        <div class="metric"><span class="v">24</span><span class="l">automated tests, including one that audits Clearbox's own code</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">How it works</span>
+        <h2>One read-only pass, five kinds of answer</h2>
+        <p>You point Clearbox at a folder. A sealed workspace reads files without following links or leaving the folder. Analyzers turn those bytes into facts, a template picks the questions, and the report shows every answer with its source.</p>
+      </div>
+      <div class="diagram" role="img" aria-label="Pipeline: a target folder is read by a read-only workspace, analyzed by eight analyzers, shaped by a template, and written as an HTML, Markdown and JSON report or returned to an AI agent over MCP.">
+        <svg viewBox="0 0 1120 250" aria-hidden="true">
+          <defs>
+            <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" class="head"/></marker>
+            <marker id="aha" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" class="head-accent"/></marker>
+          </defs>
+          <rect class="box-ext" x="10" y="70" width="150" height="110" rx="12"/>
+          <text x="85" y="112" text-anchor="middle" font-size="16" font-weight="600">Target folder</text>
+          <text x="85" y="136" text-anchor="middle" font-size="13" class="t-muted">source, binaries,</text>
+          <text x="85" y="154" text-anchor="middle" font-size="13" class="t-muted">installers, apps</text>
+
+          <path class="wire" d="M160 125H206" marker-end="url(#ah)"/>
+          <rect class="box-accent" x="210" y="40" width="220" height="170" rx="12"/>
+          <text x="320" y="72" text-anchor="middle" font-size="16" font-weight="600">Read-only workspace</text>
+          <text x="232" y="104" font-size="13">✓ stays inside the folder</text>
+          <text x="232" y="128" font-size="13">✓ never follows symlinks</text>
+          <text x="232" y="152" font-size="13">✓ size and count limits</text>
+          <text x="232" y="176" font-size="13">✓ ledger: every file + SHA-256</text>
+
+          <path class="wire" d="M430 125H476" marker-end="url(#ah)"/>
+          <rect class="box" x="480" y="20" width="220" height="210" rx="12"/>
+          <text x="590" y="50" text-anchor="middle" font-size="16" font-weight="600">8 analyzers</text>
+          <g font-size="13" class="t-mono">
+            <text x="504" y="80" class="t-mono">inventory</text><text x="604" y="80" class="t-mono">manifests</text>
+            <text x="504" y="106" class="t-mono">imports</text><text x="604" y="106" class="t-mono">symbols</text>
+            <text x="504" y="132" class="t-mono">surface</text><text x="604" y="132" class="t-mono">risk</text>
+            <text x="504" y="158" class="t-mono">binary</text><text x="604" y="158" class="t-mono">trace</text>
+          </g>
+          <text x="590" y="196" text-anchor="middle" font-size="12.5" class="t-muted">ast · JSON · TOML · struct · patterns</text>
+
+          <path class="wire" d="M700 125H746" marker-end="url(#ah)"/>
+          <rect class="box" x="750" y="55" width="150" height="140" rx="12"/>
+          <text x="825" y="90" text-anchor="middle" font-size="16" font-weight="600">Template</text>
+          <text x="825" y="116" text-anchor="middle" font-size="13" class="t-muted">questions →</text>
+          <text x="825" y="136" text-anchor="middle" font-size="13" class="t-muted">views, in TOML</text>
+          <text x="825" y="168" text-anchor="middle" font-size="12.5" class="t-mono">overview.toml</text>
+
+          <path class="wire-accent" d="M900 100H946" marker-end="url(#aha)"/>
+          <path class="wire" d="M900 160H946" marker-end="url(#ah)"/>
+          <rect class="box" x="950" y="60" width="160" height="80" rx="12"/>
+          <text x="1030" y="94" text-anchor="middle" font-size="15" font-weight="600">Report</text>
+          <text x="1030" y="118" text-anchor="middle" font-size="12.5" class="t-muted">HTML · Markdown · JSON</text>
+          <rect class="box-soft" x="950" y="150" width="160" height="56" rx="12"/>
+          <text x="1030" y="174" text-anchor="middle" font-size="14" font-weight="600">AI agent (MCP)</text>
+          <text x="1030" y="194" text-anchor="middle" font-size="12" class="t-muted">4 read-only tools</text>
+        </svg>
+      </div>
+      <p style="margin-top:18px"><a href="how-it-works/">Read the full walkthrough: safety model, analyzers, evidence model →</a></p>
+    </div>
+  </section>
+
+  <section class="band tint">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">What a report gives you</span>
+        <h2>Answers you can check line by line</h2>
+        <p>Each template is a set of questions. These are real reports Clearbox produced, linked so you can open them.</p>
+      </div>
+
+      <div class="feature">
+        <div class="text">
+          <h3>Find a feature and get a plan to rebuild it</h3>
+          <p>Describe a feature in plain words. Clearbox scores files by path, symbol names, and content, then follows the import graph to show how execution reaches it, what it depends on, and a leaves-first build order.</p>
+          <ul class="checks"><li>Import chains from entry points to the feature</li><li>Packages, settings, and host capabilities it needs</li><li>The existing tests that pin its behavior</li></ul>
+          <a href="demo/rea-trace-setup/">Open the trace of REA's setup feature →</a>
+        </div>
+        <figure><div class="frame"><div class="chrome"><i></i><i></i><i></i><span>Rebuild blueprint</span></div><img src="assets/img/report-blueprint.webp" alt="Rebuild blueprint: numbered steps listing files, what they expose, and the packages they need" width="1440" height="900" loading="lazy"></div></figure>
+      </div>
+
+      <div class="feature flip">
+        <div class="text">
+          <h3>Know what it can do to your machine before you run it</h3>
+          <p>Documented rules flag process launches, network calls, file deletion, privilege requests, disabled TLS checks, unsafe deserialization, committed secrets (redacted in the report), and text that tries to instruct an AI agent.</p>
+          <ul class="checks"><li>Production code counted apart from tests and docs</li><li>Install-time scripts read from package manifests</li><li>Grouped by area of the codebase</li></ul>
+          <a href="demo/rea-security/">Open REA's security surface →</a>
+        </div>
+        <figure><div class="frame"><div class="chrome"><i></i><i></i><i></i><span>Security surface · morluto/rea</span></div><img src="assets/img/report-security.webp" alt="Security surface summary table with severity, category, capability, file and site counts" width="1440" height="900" loading="lazy"></div></figure>
+      </div>
+
+      <div class="feature">
+        <div class="text">
+          <h3>Decode binaries from their headers</h3>
+          <p>ELF, PE, Mach-O, WebAssembly, DEX, and archives are identified by their bytes. For Windows programs Clearbox reads the import table, version resource, signer names, hardening flags, and UTF-16 strings, then maps imported APIs to plain-language capabilities.</p>
+          <ul class="checks"><li>Who signed it, and what it says it is</li><li>What its imports let it do</li><li>URLs, paths, and object names it carries</li></ul>
+          <a href="case-studies/spotify/reports/spotify-installer/">Open the Spotify installer report →</a>
+        </div>
+        <figure><div class="frame"><div class="chrome"><i></i><i></i><i></i><span>Binary triage · SpotifySetup.exe</span></div><img src="assets/img/report-installer.webp" alt="Table of capabilities derived from SpotifySetup.exe's imports, such as starting programs, registry and files" width="1440" height="900" loading="lazy"></div></figure>
+      </div>
+
+      <div class="feature flip">
+        <div class="text">
+          <h3>See the architecture at a glance</h3>
+          <p>Files are grouped into areas, and a matrix shows which areas import which. Load-bearing files, import cycles, and declared-versus-used dependencies come with it.</p>
+          <ul class="checks"><li>Python parsed with <code>ast</code>; JS/TS and Go imports resolved to files</li><li>Imports of build output mapped back to source</li><li>Dynamic imports listed as blind spots, not guessed</li></ul>
+          <a href="demo/rea-overview/">Open REA's architecture overview →</a>
+        </div>
+        <figure><div class="frame"><div class="chrome"><i></i><i></i><i></i><span>Architecture overview · morluto/rea</span></div><img src="assets/img/report-matrix.webp" alt="Area-by-area import matrix heatmap" width="1440" height="900" loading="lazy"></div></figure>
+      </div>
+    </div>
+  </section>
+
+  <section class="band" id="case-studies">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">Case studies</span>
+        <h2>Real targets, real results</h2>
+        <p>Both case studies were done with Clearbox exactly as it ships. The reports are linked so you can check every claim.</p>
+      </div>
+      <div class="grid-2" style="grid-template-columns:minmax(0,1fr)">
+        <a class="card study" href="case-studies/spotify/">
+          <div class="body">
+            <span class="eyebrow">Case study · Spotify for Windows</span>
+            <h3>From Spotify's installer to our own player</h3>
+            <p>We decoded <code>SpotifySetup.exe</code> without running it, found where Clearbox fell short and fixed it, then built and shipped mySpotify on Spotify's official API, and scanned it with the same rules.</p>
+            <div class="kv"><div><b>10</b><span>capabilities from imports</span></div><div><b>1,550</b><span>lines in mySpotify</span></div><div><b>v1.1.0</b><span>Windows .exe shipped</span></div></div>
+            <span class="more">Read the case study →</span>
+          </div>
+          <div class="shot"><img src="assets/img/msp-playlist.webp" alt="mySpotify playlist view" width="1440" height="900" loading="lazy"></div>
+        </a>
+        <a class="card study" href="case-studies/rea/">
+          <div class="body">
+            <span class="eyebrow">Case study · REA</span>
+            <h3>What “Reverse Engineer Anything” does to your machine</h3>
+            <p>We mapped REA's architecture, traced how its setup edits AI-agent config files, and found the one file that can install software as root, all in 15 seconds of reading.</p>
+            <div class="kv"><div><b>504K</b><span>lines of code mapped</span></div><div><b>106</b><span>files that launch processes</span></div><div><b>1</b><span>file that requests root</span></div></div>
+            <span class="more">Read the case study →</span>
+          </div>
+          <div class="shot"><img src="assets/img/report-security.webp" alt="REA security surface report" width="1440" height="900" loading="lazy"></div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="band tint">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">Safe by construction</span>
+        <h2>Built to open code you don't trust</h2>
+        <p>Reverse-engineering tools handle hostile input by definition. Clearbox's guarantees are enforced in code and checked by its tests.</p>
+      </div>
+      <div class="grid-3">
+        <div class="card"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span><h3>Read-only jail</h3><p>Files open read-only with <code>O_NOFOLLOW</code>. Paths outside the target and symlinks are refused. Reports can't be written inside the target.</p></div>
+        <div class="card"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><path d="M6.5 6.5l11 11"/></svg></span><h3>No execution, no network</h3><p>Python is parsed with <code>ast</code>, binaries with <code>struct</code>. A test fails the build if Clearbox imports <code>subprocess</code> or <code>socket</code>, or calls <code>eval</code>.</p></div>
+        <div class="card"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg></span><h3>A ledger of every read</h3><p>Each report lists every file it read with its SHA-256, plus a content hash that is identical on re-runs. Two reviewers can prove they saw the same thing.</p></div>
+        <div class="card"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 4v8M12 16h.01"/><circle cx="12" cy="12" r="9"/></svg></span><h3>Blind spots, stated</h3><p>Dynamic imports, path aliases, oversized files, and other limits are listed on every report instead of being silently skipped.</p></div>
+        <div class="card"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 12h4l2-5 4 10 2-5h4"/></svg></span><h3>Confidence on every view</h3><p>Each result is labeled <strong>parsed</strong>, <strong>pattern</strong>, or <strong>heuristic</strong>, so you know which ones to double-check.</p></div>
+        <div class="card"><span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 8l-4 4 4 4M17 8l4 4-4 4"/></svg></span><h3>Agent-safe output</h3><p>Over MCP, agents only see folders you allow. Text from the target is fenced with a random nonce so it can't pose as instructions.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band" id="compare">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">Compared with REA</span>
+        <h2>A safer first pass</h2>
+        <p>REA is a capable, popular tool that drives decompilers and live programs. Clearbox does the parts that don't need to run anything, and does them with less to trust.</p>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th scope="col"></th><th scope="col">REA 6.4</th><th scope="col">Clearbox 0.2</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Install footprint</th><td>38 runtime dependencies, 561 locked packages, and a <code>prepare</code> script that runs on install</td><td class="us">Python standard library only</td></tr>
+            <tr><th scope="row">Code to audit</th><td>About 290,000 lines of non-test code</td><td class="us">About 3,200 lines of Python</td></tr>
+            <tr><th scope="row">Runs the target</th><td><span class="no">Yes, for runtime capture, with your permissions</span></td><td class="us"><span class="yes">Never</span></td></tr>
+            <tr><th scope="row">Privileges</th><td><span class="no">Can install software through <code>pkexec</code>, after asking</span></td><td class="us"><span class="yes">None requested</span></td></tr>
+            <tr><th scope="row">Agent tools</th><td>About 100, some launch browsers and processes</td><td class="us">4, read-only, limited to folders you allow</td></tr>
+            <tr><th scope="row">Proof per claim</th><td>Evidence and limitations per result</td><td class="us">File, line, SHA-256, a read ledger, and a reproducible content hash</td></tr>
+            <tr><th scope="row">Decompiling and live observation</th><td><span class="yes">Ghidra, IDA, Hopper, browsers, Android devices</span></td><td class="us"><span class="no">Not supported; use a disassembler in a VM</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="band tint" id="install">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">Get started</span>
+        <h2>Python 3.11 and a folder</h2>
+        <p>Clone or extract the target first. Clearbox never downloads anything for you, which keeps the network out of the picture.</p>
+      </div>
+      <div class="grid-2">
+        <div class="code"><div class="bar"><span>Terminal</span><button class="copy" type="button" data-copy="cli">Copy</button></div>
 <pre id="cli">pip install git+https://github.com/vosbek/reverse-enginer-rea
-clearbox scan ./some-app                    <span class="c"># overview</span>
+
+clearbox scan ./some-app                     <span class="c"># architecture overview</span>
 clearbox scan ./some-app -t security-surface
-clearbox trace ./some-app "search notes"    <span class="c"># feature trace</span>
-clearbox templates                          <span class="c"># list templates</span></pre></div>
-        <p>Reports land in <code>clearbox-reports/</code> as HTML, Markdown, and JSON. Clearbox refuses to write inside the target.</p>
-      </div>
-      <div>
-        <div class="code"><div class="cap"><span>MCP config for your agent</span><button class="copy" type="button" data-copy="mcp">Copy</button></div>
+clearbox scan ./installers -t binary-triage
+clearbox trace ./some-app "search notes"     <span class="c"># feature trace</span></pre></div>
+        <div class="code"><div class="bar"><span>MCP config for your AI agent</span><button class="copy" type="button" data-copy="mcp">Copy</button></div>
 <pre id="mcp">{
   "mcpServers": {
     "clearbox": {
@@ -350,23 +266,17 @@ clearbox templates                          <span class="c"># list templates</sp
     }
   }
 }</pre></div>
-        <p>The agent gets four read-only tools and can only see what is under <code>--allow-root</code>.</p>
       </div>
     </div>
   </section>
+</main>
 
-  <footer>
-    <span>Clearbox · MIT · built as a safer take on <a href="https://github.com/morluto/rea">REA</a>. Demo reports are generated by CI from a pinned REA commit.</span>
-    <a href="https://github.com/vosbek/reverse-enginer-rea">Source on GitHub</a>
-  </footer>
-</div>
-<script>
-document.querySelectorAll('.copy').forEach(btn => btn.addEventListener('click', async () => {
-  const text = document.getElementById(btn.dataset.copy).textContent;
-  try { await navigator.clipboard.writeText(text); btn.textContent = 'Copied'; }
-  catch (e) { const r = document.createRange(); r.selectNodeContents(document.getElementById(btn.dataset.copy)); const s = getSelection(); s.removeAllRanges(); s.addRange(r); btn.textContent = 'Selected'; }
-  setTimeout(() => { btn.textContent = 'Copy'; }, 1600);
-}));
-</script>
+<footer class="site">
+  <div class="container">
+    <span>Clearbox · MIT license · demo reports are rebuilt by CI from a pinned REA commit</span>
+    <nav aria-label="Footer"><a href="how-it-works/">How it works</a><a href="case-studies/spotify/">Spotify case study</a><a href="case-studies/rea/">REA case study</a><a href="https://github.com/vosbek/reverse-enginer-rea">Source</a><a href="https://github.com/vosbek/my-spotify">mySpotify</a></nav>
+  </div>
+</footer>
+<script src="assets/site.js"></script>
 </body>
 </html>

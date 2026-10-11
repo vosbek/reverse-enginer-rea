@@ -1,5 +1,5 @@
 {
- "clearbox": "0.1.0",
+ "clearbox": "0.2.0",
  "manifest": {
   "target": "morluto/rea",
   "template": {
@@ -9,14 +9,14 @@
    "sha256": "088faaff2c3c85830e4024e5a582171ea2a087a847040749ed52760e903e42a0"
   },
   "params": {},
-  "started": "2026-10-11T18:05:10+00:00",
-  "duration_s": 14.39,
+  "started": "2026-10-11T18:54:22+00:00",
+  "duration_s": 14.95,
   "analyzers": {
-   "inventory": 0.232,
-   "imports": 1.316,
+   "inventory": 0.279,
+   "imports": 1.374,
    "manifests": 0.0,
-   "surface": 1.48,
-   "risk": 11.313
+   "surface": 1.518,
+   "risk": 11.733
   },
   "python": "3.13.16",
   "limits": {
@@ -43,7 +43,7 @@
    "high": 185,
    "low": 43
   },
-  "content_sha256": "b10aecf811565ac6a956d55c09faf5c0ea896f1405e954642a9b4193b1e3ec0e",
+  "content_sha256": "43cf53e9ed3078d7432c9d612b4a8ebea54de011f622e381575c14d95f645701",
   "link_template": "https://github.com/morluto/rea/blob/a95795c6ed3cb149e03460f4c818ad12e0c670d9/{path}#L{line}"
  },
  "sections": [

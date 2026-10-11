@@ -2,7 +2,7 @@
 
 Everything the target can do to the host it runs on, with the exact line for each claim. Use before you install, run, or connect an agent to it.
 
-Clearbox 0.1.0 · 9 files read · 0.07s · ledger `6c9d00e3c8c5d80a` · content `f3186cce5eea0200`
+Clearbox 0.2.0 · 11 files read · 0.06s · ledger `621ae81dd2367695` · content `a3a24d10a41795ac`
 
 ## Summary
 
@@ -114,7 +114,7 @@ _Which environment variables change behavior?_
 
 | Variable | Files | Evidence |
 |---|---|---|
-| MYSPOTIFY_VERBOSE | 1 | `myspotify.py:83` |
+| MYSPOTIFY_VERBOSE | 1 | `myspotify.py:86` |
 
 > Configuration that changes behavior without changing code.
 

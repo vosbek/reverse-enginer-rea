@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>REA Case Study · Clearbox</title>
+<meta name="description" content="Clearbox maps REA, a popular reverse-engineering MCP server: its architecture, what it can do to the host, and how its setup edits AI-agent configuration, with evidence for every claim.">
+<link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Schibsted+Grotesk:wght@600;700;800&display=swap">
+<link rel="stylesheet" href="../../assets/site.css">
+</head>
+<body>
+<header class="nav">
+  <div class="container">
+    <a class="logo" href="../../"><i aria-hidden="true"></i>Clearbox</a>
+    <nav class="nav-links" aria-label="Main">
+      <a href="../../how-it-works/">How it works</a>
+      <a href="../spotify/">Spotify case study</a>
+      <a href="./" aria-current="page">REA case study</a>
+      <a href="../../#install">Install</a>
+    </nav>
+    <a class="btn small gh" href="https://github.com/vosbek/reverse-enginer-rea">GitHub</a>
+    <button class="nav-toggle" type="button" aria-expanded="false">Menu</button>
+  </div>
+</header>
+
+<main>
+  <section class="page-hero">
+    <div class="container">
+      <div class="crumbs"><a href="../../">Clearbox</a> / Case studies / REA</div>
+      <span class="eyebrow">Case study</span>
+      <h1 style="margin-top:14px">What “Reverse Engineer Anything” does to your machine</h1>
+      <p class="lead"><a href="https://github.com/morluto/rea">REA</a> is a popular MCP server that lets AI agents drive decompilers, browsers and live programs. Before connecting a tool like that to an agent, we wanted to know what it is and what it can do. Clearbox read commit <code>a95795c</code> in 15 seconds without running any of it.</p>
+      <div class="metrics" style="margin-top:36px">
+        <div class="metric"><span class="v">504,490</span><span class="l">lines of code across 2,530 source files, 43% tests</span></div>
+        <div class="metric"><span class="v">10,692</span><span class="l">file-to-file import edges, 27 import cycles</span></div>
+        <div class="metric"><span class="v">103</span><span class="l">agent tool names declared in source</span></div>
+        <div class="metric"><span class="v">185</span><span class="l">high-severity capability sites in production code</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band tint">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">Findings</span>
+        <h2>Four things worth knowing before you install it</h2>
+        <p>Each comes from a report linked below, and each line of evidence links to that line in REA's source on GitHub.</p>
+      </div>
+      <div class="findings">
+        <article class="finding">
+          <div class="say"><span class="conf inferred">Pattern</span><h3>It launches programs and drives terminals</h3><p>106 production files can start other processes and 5 drive an interactive terminal through <code>node-pty</code>. That is how REA runs Ghidra, Hopper and target programs. It also means anything it runs gets your user's permissions; REA's own security policy says it is not a sandbox.</p></div>
+          <div class="proof"><span class="lbl">Evidence</span>
+            <div class="ev"><span class="at">159 sites</span><span class="is">child_process: spawn, execFile, fork</span></div>
+            <div class="ev"><span class="at">ProcessHarness.ts:265</span><span class="is">const { spawn } = await import("@lydell/node-pty");</span></div>
+            <a href="../../demo/rea-security/">Security surface report →</a></div>
+        </article>
+        <article class="finding">
+          <div class="say"><span class="conf inferred">Pattern</span><h3>It can install software as root</h3><p>The Linux Hopper installer calls <code>apt-get</code>, <code>dnf</code> or <code>pacman</code> and escalates with <code>pkexec</code>. REA documents this and asks first. Clearbox found it in one file, with line numbers, without installing anything.</p></div>
+          <div class="proof"><span class="lbl">Evidence</span>
+            <div class="ev"><span class="at"><a href="https://github.com/morluto/rea/blob/a95795c6ed3cb149e03460f4c818ad12e0c670d9/src/application/LinuxHopper.ts#L337">LinuxHopper.ts:337</a></span><span class="is">const executable = isRoot ? command[0] : "pkexec";</span></div>
+            <div class="ev"><span class="at"><a href="https://github.com/morluto/rea/blob/a95795c6ed3cb149e03460f4c818ad12e0c670d9/src/application/LinuxHopper.ts#L329">LinuxHopper.ts:329</a></span><span class="is">["apt-get", "install", "-y", archive, ...runtimeDependencies]</span></div></div>
+        </article>
+        <article class="finding">
+          <div class="say"><span class="conf inferred">Heuristic</span><h3>Its setup edits your AI agents' configuration</h3><p>Tracing “setup agent client configuration” finds 10 files reached from the <code>rea</code> command. They read and write other applications' config files, consult 32 environment variables, and are covered by 36 test files. The report includes a 10-step plan to rebuild the feature.</p></div>
+          <div class="proof"><span class="lbl">Import chain</span>
+            <div class="ev"><span class="at">entry</span><span class="is">scripts/rea.mjs → src/cli.ts → src/cli/setupCommands.ts</span></div>
+            <div class="ev"><span class="at">writes</span><span class="is">SetupClientConfiguration.ts:183 · SetupSkill.ts:145</span></div>
+            <a href="../../demo/rea-trace-setup/">Feature trace report →</a></div>
+        </article>
+        <article class="finding">
+          <div class="say"><span class="conf">Parsed</span><h3>Installing it runs code</h3><p>Its <code>package.json</code> declares a <code>prepare</code> script, which npm runs on install from a git checkout. Behind 38 declared runtime dependencies sit 561 locked packages.</p></div>
+          <div class="proof"><span class="lbl">Evidence</span>
+            <div class="ev"><span class="at"><a href="https://github.com/morluto/rea/blob/a95795c6ed3cb149e03460f4c818ad12e0c670d9/package.json#L227">package.json:227</a></span><span class="is">"prepare": "node scripts/prepare.mjs"</span></div>
+            <a href="../../demo/rea-dependencies/">Dependency audit report →</a></div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="container">
+      <div class="feature">
+        <div class="text">
+          <span class="eyebrow">Architecture</span>
+          <h3>A domain core with many adapters</h3>
+          <p>The overview groups REA's 42 areas and shows which import which. The most-imported files are small domain types: <code>result.ts</code> (231 importers), <code>jsonValue.ts</code> (215) and the error core (202). Changing one of those ripples through most of the codebase.</p>
+          <ul class="checks"><li>42 areas; largest are <code>src/domain</code> (102K lines) and <code>src/application</code> (54K)</li><li>82 third-party packages actually imported</li><li>284 imports point at build output and were mapped back to source</li></ul>
+          <a href="../../demo/rea-overview/">Architecture overview report →</a>
+        </div>
+        <figure><div class="frame"><div class="chrome"><i></i><i></i><i></i><span>Architecture overview · morluto/rea</span></div><img src="../../assets/img/report-matrix.webp" alt="Import matrix heatmap of REA's areas" width="2200" height="1376" loading="lazy"></div></figure>
+      </div>
+      <div class="feature flip">
+        <div class="text">
+          <span class="eyebrow">Rebuilding a feature</span>
+          <h3>A leaves-first plan for REA's setup</h3>
+          <p>The trace orders the setup feature's files so each step only depends on earlier ones, and lists what each file exposes and the packages it needs. Read it from the top and you can reimplement the feature one tested layer at a time.</p>
+          <a href="../../demo/rea-trace-setup/#s4">Rebuild blueprint →</a>
+        </div>
+        <figure><div class="frame"><div class="chrome"><i></i><i></i><i></i><span>Feature trace · rebuild blueprint</span></div><img src="../../assets/img/report-blueprint.webp" alt="Rebuild blueprint with numbered steps" width="2200" height="1376" loading="lazy"></div></figure>
+      </div>
+    </div>
+  </section>
+
+  <section class="band tint">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">All reports</span>
+        <h2>Open the evidence</h2>
+        <p>CI rebuilds these from REA commit <code>a95795c</code> on every deploy, so they always match the current Clearbox.</p>
+      </div>
+      <div class="grid-3">
+        <a class="card" href="../../demo/rea-overview/"><h3>Architecture overview</h3><p>Areas, import matrix, hubs, cycles, dependencies, entry points, configuration.</p><span class="more">Open →</span></a>
+        <a class="card" href="../../demo/rea-security/"><h3>Security surface</h3><p>Every host-touching capability in production code, line by line.</p><span class="more">Open →</span></a>
+        <a class="card" href="../../demo/rea-trace-setup/"><h3>Feature trace: setup</h3><p>Where it lives, how it is reached, what it needs, and how to rebuild it.</p><span class="more">Open →</span></a>
+        <a class="card" href="../../demo/rea-dependencies/"><h3>Dependency audit</h3><p>Declared versus imported packages and install-time scripts.</p><span class="more">Open →</span></a>
+        <a class="card" href="../../demo/clearbox-self/"><h3>Clearbox on itself</h3><p>The same security rules on our own code. Its only real capability is writing the report; the rest are its own rule definitions.</p><span class="more">Open →</span></a>
+      </div>
+      <div class="note" style="margin-top:24px"><span class="i">i</span><p><strong>Fair comparison.</strong> REA does things Clearbox doesn't: decompiling through Ghidra, IDA and Hopper, observing live browsers and Electron apps, and driving Android devices. These findings describe capabilities, not vulnerabilities. They are what you should know before giving a tool those powers.</p></div>
+    </div>
+  </section>
+</main>
+
+<footer class="site">
+  <div class="container">
+    <span>Reports are rebuilt by CI from a pinned REA commit.</span>
+    <nav aria-label="Footer"><a href="../../">Home</a><a href="../../how-it-works/">How it works</a><a href="../spotify/">Spotify case study</a><a href="https://github.com/morluto/rea">REA on GitHub</a></nav>
+  </div>
+</footer>
+<script src="../../assets/site.js"></script>
+</body>
+</html>

@@ -2,7 +2,7 @@
 
 Find where a feature lives, how execution reaches it, what it depends on, and a leaves-first plan to rebuild it.
 
-Clearbox 0.1.0 · 2,757 files read · 14.47s · ledger `f0fb3cfabd819a21` · content `6b51f527c8620063`
+Clearbox 0.2.0 · 2,757 files read · 15.64s · ledger `f0fb3cfabd819a21` · content `3780f5310a5f6c44`
 
 Parameters: `feature=setup agent client configuration`
 
@@ -42,20 +42,20 @@ _Which files implement the feature, and what is the evidence?_
 | src/application/SetupPlan.ts | seed | 9 | src/application | `src/application/SetupPlan.ts:1` |
 | src/application/Setup.ts | seed | 18 | src/application | `src/application/Setup.ts:1` |
 | src/application/Setup.fixture.ts | caller | 3 | src/application | `src/application/Setup.fixture.ts:1` |
-| src/application/GeminiClientSettings.ts | caller | 3 | src/application | `src/application/GeminiClientSettings.ts:1` |
-| src/application/UpdateMaintenance.ts | caller | 3 | src/application | `src/application/UpdateMaintenance.ts:1` |
 | src/application/ClientRegistrationStatus.ts | caller | 3 | src/application | `src/application/ClientRegistrationStatus.ts:1` |
+| src/application/UpdateMaintenance.ts | caller | 3 | src/application | `src/application/UpdateMaintenance.ts:1` |
+| src/application/GeminiClientSettings.ts | caller | 3 | src/application | `src/application/GeminiClientSettings.ts:1` |
 | src/application/Uninstall.ts | caller | 2 | src/application | `src/application/Uninstall.ts:1` |
 | src/application/SetupClients.ts | caller | 2 | src/application | `src/application/SetupClients.ts:1` |
-| src/application/DoctorScope.ts | caller | 1 | src/application | `src/application/DoctorScope.ts:1` |
-| src/application/SetupSkill.ts | caller | 1 | src/application | `src/application/SetupSkill.ts:1` |
-| scripts/verify-windows-package.mjs | caller | 1 | scripts | `scripts/verify-windows-package.mjs:1` |
 | scripts/verify-package-environment.mjs | caller | 1 | scripts | `scripts/verify-package-environment.mjs:1` |
+| scripts/verify-windows-package.mjs | caller | 1 | scripts | `scripts/verify-windows-package.mjs:1` |
+| src/application/SetupSkill.ts | caller | 1 | src/application | `src/application/SetupSkill.ts:1` |
+| src/application/DoctorScope.ts | caller | 1 | src/application | `src/application/DoctorScope.ts:1` |
 | src/cli.ts | caller | 1 | src | `src/cli.ts:1` |
 | src/application/ClientRegistrationEnvironment.ts | caller | 1 | src/application | `src/application/ClientRegistrationEnvironment.ts:1` |
 | src/application/Doctor.ts | dependency | 5 | src/application | `src/application/Doctor.ts:1` |
-| src/application/ClientRegistrationIdentity.ts | dependency | 4 | src/application | `src/application/ClientRegistrationIdentity.ts:1` |
 | src/identity.ts | dependency | 4 | src | `src/identity.ts:1` |
+| src/application/ClientRegistrationIdentity.ts | dependency | 4 | src/application | `src/application/ClientRegistrationIdentity.ts:1` |
 
 _12 more rows in report.json._
 

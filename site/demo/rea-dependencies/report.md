@@ -2,7 +2,7 @@
 
 What the target declares, what it actually imports, the gaps between the two, and what runs at install.
 
-Clearbox 0.1.0 · 2,757 files read · 1.69s · ledger `0aa8ee16dff3063e` · content `8c58da8b857e0b92`
+Clearbox 0.2.0 · 2,757 files read · 1.69s · ledger `0aa8ee16dff3063e` · content `8c131124afe2c91f`
 
 ## Declared
 

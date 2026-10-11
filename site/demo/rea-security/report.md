@@ -2,7 +2,7 @@
 
 Everything the target can do to the host it runs on, with the exact line for each claim. Use before you install, run, or connect an agent to it.
 
-Clearbox 0.1.0 · 2,757 files read · 12.87s · ledger `31030c50c75106af` · content `62bd4da52566f3e9`
+Clearbox 0.2.0 · 2,757 files read · 12.48s · ledger `31030c50c75106af` · content `58cbc90d569f7489`
 
 ## Summary
 

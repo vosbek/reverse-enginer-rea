@@ -1,5 +1,5 @@
 {
- "clearbox": "0.1.0",
+ "clearbox": "0.2.0",
  "manifest": {
   "target": "clearbox",
   "template": {
@@ -9,12 +9,12 @@
    "sha256": "9dc26dc671b4dfcd9b51d7a4753cec0d03cc88fb8c650daf283e62cf631e8714"
   },
   "params": {},
-  "started": "2026-10-11T18:05:54+00:00",
-  "duration_s": 0.12,
+  "started": "2026-10-11T18:55:07+00:00",
+  "duration_s": 0.15,
   "analyzers": {
-   "risk": 0.093,
+   "risk": 0.117,
    "manifests": 0.0,
-   "surface": 0.025
+   "surface": 0.032
   },
   "python": "3.13.16",
   "limits": {
@@ -23,10 +23,10 @@
    "max_binary_bytes": 67108864,
    "max_total_bytes": 2147483648
   },
-  "files_seen": 29,
-  "files_read": 27,
-  "bytes_read": 156227,
-  "ledger_sha256": "218d702acf4c6a18d713cf24e079d29b01827269e095bcd4682fb2c5fa4eeddd",
+  "files_seen": 30,
+  "files_read": 28,
+  "bytes_read": 172368,
+  "ledger_sha256": "56e481edb8a86f3563f14dfd4b92c7117094808c788cf566e1b2de1f538307b5",
   "safety": [
    "Read-only: target files are opened O_RDONLY and never modified.",
    "No execution: nothing from the target is run, imported, or evaluated. Python is parsed with ast.parse.",
@@ -41,7 +41,7 @@
    "medium": 3,
    "low": 3
   },
-  "content_sha256": "4fbfa1e4c7424c850d104aed5ed5d77ab4d1e52ab47ff6cc8c45135df6d7836c",
+  "content_sha256": "eabfeecff60cf4e3c28141ca954e6d1116172fdb74d73897187de8c5c9b19f2e",
   "link_template": "https://github.com/vosbek/reverse-enginer-rea/blob/HEAD/{path}#L{line}"
  },
  "sections": [
@@ -900,9 +900,9 @@
  "ledger": [
   {
    "path": ".github/workflows/pages.yml",
-   "size": 1189,
+   "size": 1164,
    "mode": "read",
-   "sha256": "2943f3809c5ab7593b03dbd9338be43c5e478a0eadc104879b5918666b6d5081",
+   "sha256": "0ccd3d6f014ca1daf6741f8f4ade0024afc1822e1a60f60502d9ff0a1b4a9f0a",
    "readers": [
     "inventory",
     "risk"
@@ -928,9 +928,9 @@
   },
   {
    "path": "README.md",
-   "size": 5233,
+   "size": 5353,
    "mode": "read",
-   "sha256": "3eb0c6e3a725f3047aab19430662ed595cbdc610fd98c36cb76265b4be27c5bb",
+   "sha256": "75b0b1f6dc180bd53e8a5232a8ba3e88720920566742a53efabb80c5077a58ba",
    "readers": [
     "inventory",
     "risk"
@@ -940,7 +940,7 @@
    "path": "clearbox/__init__.py",
    "size": 178,
    "mode": "read",
-   "sha256": "69934b3b14c4bc7e9eb92fd7518e7f87e6fee968d0c0d4dc7c03ad200c068955",
+   "sha256": "e0ff6be3e173f96b816cfb5bf1d784e283fa8309f614fb1ebebe99b55d81e42c",
    "readers": [
     "inventory",
     "risk",
@@ -971,9 +971,9 @@
   },
   {
    "path": "clearbox/analyzers/binary.py",
-   "size": 10719,
+   "size": 14189,
    "mode": "read",
-   "sha256": "806881092038b4e55ec054f3140546213966f12f227dd830c9d5aa242a178ca3",
+   "sha256": "e1bb620920bb21a279b18fd518738b049bc2dda84bbf8cc6a806f3a7d6559238",
    "readers": [
     "inventory",
     "risk",
@@ -1007,6 +1007,17 @@
    "size": 10505,
    "mode": "read",
    "sha256": "33a97ad8cf037095bdbbd6f30da67ee895483467a79e6adda67d47b6fc87f25c",
+   "readers": [
+    "inventory",
+    "risk",
+    "surface"
+   ]
+  },
+  {
+   "path": "clearbox/analyzers/pe.py",
+   "size": 10065,
+   "mode": "read",
+   "sha256": "e9c3db9a31ef84aa2cde8369651123e498bdb591b02c89c5beb5408a5c4f52f1",
    "readers": [
     "inventory",
     "risk",
@@ -1114,9 +1125,9 @@
   },
   {
    "path": "clearbox/render/html.py",
-   "size": 19161,
+   "size": 21464,
    "mode": "read",
-   "sha256": "4df73dbac36394733d4bf02328195c2f7d847e63896b233a0aceb7d38ba38da6",
+   "sha256": "5dd9b78c7846eadb5c95f10d569a0ba0faf95f36be203458906e2b3e2a3c3a6a",
    "readers": [
     "inventory",
     "risk",
@@ -1136,9 +1147,9 @@
   },
   {
    "path": "clearbox/templates/binary-triage.toml",
-   "size": 667,
+   "size": 875,
    "mode": "read",
-   "sha256": "0f7160312bccbcf54a9fa0466489541174ed2447484c16355b5bc8a1f3a9bfe8",
+   "sha256": "19c7d5ecd2b541310eaa9ab0dfc87b1cc69aeb02f116197e0c6d4fbc1e8a7491",
    "readers": [
     "inventory",
     "risk"
@@ -1199,7 +1210,7 @@
    "path": "pyproject.toml",
    "size": 620,
    "mode": "read",
-   "sha256": "f73a2e0f9b4acfb2410f7d0f250702addf414833c012591e9ba5b57f56a6b5ed",
+   "sha256": "f13d03ad46c0d30c1582ba0146c9b167071dfe78a7d4b8fdbcc239cb0a0df7bf",
    "readers": [
     "inventory",
     "manifests",

@@ -2,7 +2,7 @@
 
 Identify every opaque file: format, architecture, sections, entropy, and the strings that hint at what it does. Headers only; nothing is executed.
 
-Clearbox 0.1.0 · 1 files read · 0.14s · ledger `01531f8d64b2c86a` · content `5e373fe6bd9c2905`
+Clearbox 0.2.0 · 1 files read · 0.15s · ledger `01531f8d64b2c86a` · content `dd2ada1f585111ff`
 
 ## What is in here?
 

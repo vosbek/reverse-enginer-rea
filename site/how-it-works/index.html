@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>How Clearbox Works</title>
+<meta name="description" content="Clearbox's read-only workspace, its eight analyzers, templates, evidence model, and agent interface, and how each safety guarantee is enforced.">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Schibsted+Grotesk:wght@600;700;800&display=swap">
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body>
+<header class="nav">
+  <div class="container">
+    <a class="logo" href="../"><i aria-hidden="true"></i>Clearbox</a>
+    <nav class="nav-links" aria-label="Main">
+      <a href="./" aria-current="page">How it works</a>
+      <a href="../case-studies/spotify/">Spotify case study</a>
+      <a href="../case-studies/rea/">REA case study</a>
+      <a href="../#install">Install</a>
+    </nav>
+    <a class="btn small gh" href="https://github.com/vosbek/reverse-enginer-rea">GitHub</a>
+    <button class="nav-toggle" type="button" aria-expanded="false">Menu</button>
+  </div>
+</header>
+
+<main>
+  <section class="page-hero">
+    <div class="container">
+      <div class="crumbs"><a href="../">Clearbox</a> / How it works</div>
+      <span class="eyebrow">How it works</span>
+      <h1 style="margin-top:14px">Read everything, run nothing, show the source of every answer</h1>
+      <p class="lead">Clearbox is about 3,200 lines of Python with no dependencies. A sealed workspace reads the target folder. Eight analyzers turn bytes into facts, a template chooses the questions, and the report shows each answer next to the lines it came from.</p>
+    </div>
+  </section>
+
+  <section class="band tint">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">1 · The workspace</span>
+        <h2>Every byte goes through one door</h2>
+        <p>Analyzers never open files themselves. They ask the workspace, which applies the same rules to every read and writes each one into a ledger.</p>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th scope="col">Guarantee</th><th scope="col">How it's enforced</th><th scope="col">Where</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Read-only</th><td>Files are opened with <code>O_RDONLY | O_NOFOLLOW</code>. Nothing in the target is ever written.</td><td class="mono"><a href="https://github.com/vosbek/reverse-enginer-rea/blob/main/clearbox/workspace.py">workspace.py</a></td></tr>
+            <tr><th scope="row">Stays in the folder</th><td>Every path is resolved with <code>realpath</code> and must sit under the target root. <code>..</code>, absolute paths and NUL bytes are refused.</td><td class="mono">workspace.py</td></tr>
+            <tr><th scope="row">No symlinks</th><td>The directory walk records symlinks as skipped instead of following them, and a read through one is refused.</td><td class="mono">workspace.py</td></tr>
+            <tr><th scope="row">Bounded</th><td>At most 100,000 files, 4 MB per text file, 64 MB per binary, and 2 GB in total. Anything over a limit becomes a blind spot.</td><td class="mono">Limits</td></tr>
+            <tr><th scope="row">No execution, no network</th><td>A test parses Clearbox's own source and fails if it imports <code>subprocess</code>, <code>socket</code>, <code>urllib</code>, <code>http</code>, <code>ctypes</code> and similar modules, or calls <code>eval</code>, <code>exec</code>, <code>os.system</code> or file deletion.</td><td class="mono"><a href="https://github.com/vosbek/reverse-enginer-rea/blob/main/tests/test_clearbox.py">SelfAudit test</a></td></tr>
+            <tr><th scope="row">Output outside the target</th><td>The command line refuses to write a report inside the folder it is analyzing.</td><td class="mono">cli.py</td></tr>
+            <tr><th scope="row">Secrets redacted</th><td>Matched credentials are reduced to their first four characters, a length, and a SHA-256 fingerprint before any report sees them.</td><td class="mono">risk.py</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">2 · Analyzers</span>
+        <h2>Eight analyzers, each honest about how it knows</h2>
+        <p>Where a real parser exists, Clearbox uses it. Where it relies on patterns or scoring, the result says so.</p>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th scope="col">Analyzer</th><th scope="col">What it produces</th><th scope="col">How</th><th scope="col">Confidence</th></tr></thead>
+          <tbody>
+            <tr><th scope="row" class="mono">inventory</th><td>Files, lines of code, languages, test share, and the "areas" used by architecture views</td><td>Extensions and byte sniffing</td><td><span class="conf">Parsed</span></td></tr>
+            <tr><th scope="row" class="mono">manifests</th><td>Declared dependencies, entry points, lockfile sizes, install-time scripts</td><td>JSON and TOML parsers for npm, Python, Cargo and Go manifests</td><td><span class="conf">Parsed</span></td></tr>
+            <tr><th scope="row" class="mono">imports</th><td>The file-to-file import graph, external package reach, cycles, undeclared and unused packages</td><td>Python's <code>ast</code>; resolved import patterns for JavaScript, TypeScript and Go</td><td><span class="conf">Parsed</span> <span class="conf inferred">Pattern</span></td></tr>
+            <tr><th scope="row" class="mono">symbols</th><td>Exported functions, classes and types per file</td><td><code>ast</code> for Python; declaration patterns elsewhere</td><td><span class="conf">Parsed</span> <span class="conf inferred">Pattern</span></td></tr>
+            <tr><th scope="row" class="mono">surface</th><td>Entry points, HTTP routes, CLI commands, agent tools, environment variables</td><td>Framework-specific patterns</td><td><span class="conf inferred">Pattern</span></td></tr>
+            <tr><th scope="row" class="mono">risk</th><td>21 rules in 10 categories: processes, dynamic code, privileges, network, files, TLS, deserialization, secrets, agent safety, supply chain</td><td>Documented regular expressions, with tests and docs counted apart</td><td><span class="conf inferred">Pattern</span></td></tr>
+            <tr><th scope="row" class="mono">binary</th><td>Format, architecture, sections, entropy; for Windows programs also imports, capabilities, version info, signer names, and UTF-16 strings</td><td><code>struct</code> over the file's bytes, with bounds checks</td><td><span class="conf">Parsed</span></td></tr>
+            <tr><th scope="row" class="mono">trace</th><td>Where a feature lives, how execution reaches it, what it needs, and a leaves-first rebuild plan</td><td>Keyword scoring over paths, symbols and content, then a walk of the import graph</td><td><span class="conf inferred">Heuristic</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="band tint">
+    <div class="container">
+      <div class="feature">
+        <div class="text">
+          <span class="eyebrow">3 · Templates</span>
+          <h3>A report is a list of questions</h3>
+          <p>Templates are TOML files. Each section asks a question and names the views that answer it. Clearbox runs only the analyzers those views need, in dependency order. A template that names a view that doesn't exist is rejected with a list of valid ones.</p>
+          <ul class="checks">
+            <li><code>overview</code>: architecture, weight, dependencies, entry points</li>
+            <li><code>feature-trace</code>: where a feature lives and how to rebuild it</li>
+            <li><code>security-surface</code>: what it can do to the host</li>
+            <li><code>dependency-audit</code>: declared versus imported</li>
+            <li><code>binary-triage</code>: formats, imports, signers, strings</li>
+          </ul>
+        </div>
+        <div class="code"><div class="bar"><span>handoff.toml · run with -t handoff.toml</span><button class="copy" type="button" data-copy="tpl">Copy</button></div>
+<pre id="tpl">id = "handoff"
+name = "New-engineer handoff"
+summary = "What a new teammate needs on day one."
+
+[[sections]]
+title = "Where do I start reading?"
+question = "Entry points and the files everything depends on."
+views = [<span class="k">"surface.entrypoints"</span>, <span class="k">"imports.hubs"</span>]
+
+[[sections]]
+title = "What can break production?"
+views = [<span class="k">"risk.summary"</span>, <span class="k">"surface.env"</span>]</pre></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">4 · Evidence</span>
+        <h2>What a single finding carries</h2>
+        <p>This is one real finding from the REA scan, exactly as it appears in <code>report.json</code>. The HTML report shows the same record when you click its row, with a link to that line on GitHub.</p>
+      </div>
+      <div class="grid-2" style="align-items:start">
+        <div class="code"><div class="bar"><span>rea-security/report.json</span></div>
+<pre>{
+  "rule": "priv.elevate",
+  "title": "Requests elevated privileges",
+  "severity": "high",
+  "confidence": <span class="k">"pattern"</span>,
+  "category": "privilege",
+  "evidence": [{
+    "path": <span class="k">"src/application/LinuxHopper.ts"</span>,
+    "line": <span class="k">337</span>,
+    "snippet": "const executable = isRoot ? command[0] : \"pkexec\";",
+    "sha256": <span class="k">"b45f18669881fb28…12674f3"</span>
+  }],
+  "tags": []
+}</pre></div>
+        <div class="prose">
+          <p><strong>Confidence</strong> says how the fact was established: <em>parsed</em> from a real structure, matched by a documented <em>pattern</em>, or a <em>heuristic</em> inference.</p>
+          <p><strong>Evidence</strong> pins the claim to a path, a line, the exact text, and the SHA-256 of the file as read. Anyone can check it against the same commit.</p>
+          <p><strong>The ledger</strong> at the end of every report lists every file read and which analyzers used it. Its digest, plus a content hash of the whole report, is printed at the top. Same input, same hashes.</p>
+          <p><strong>Blind spots</strong> list what the run could not see: computed imports, path aliases, files over a limit, and the reach of pattern rules.</p>
+          <p><a href="../demo/rea-security/">Open the report this finding comes from →</a></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band tint">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">5 · For AI agents</span>
+        <h2>Four read-only tools over MCP</h2>
+        <p>Agents are good at asking follow-up questions and bad at noticing when a file is trying to instruct them. Clearbox's agent interface is built around both facts.</p>
+      </div>
+      <div class="grid-2" style="align-items:start">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th scope="col">Tool</th><th scope="col">Does</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">clearbox_templates</td><td>Lists templates and their parameters</td></tr>
+              <tr><td class="mono">clearbox_scan</td><td>Runs a built-in template on a folder and returns the Markdown report</td></tr>
+              <tr><td class="mono">clearbox_trace</td><td>Runs a feature trace</td></tr>
+              <tr><td class="mono">clearbox_read</td><td>Returns up to 400 lines of one file, to check evidence</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="prose">
+          <p><strong>Only folders you allow.</strong> The server starts with <code>--allow-root</code> for each folder; anything else is refused. Custom template files are not accepted over MCP.</p>
+          <p><strong>Read-only by declaration.</strong> Every tool is marked read-only, non-destructive and closed-world.</p>
+          <p><strong>Fenced output.</strong> Text from the target is wrapped between <code>&lt;&lt;&lt;TARGET-DATA 9f2c…&gt;&gt;&gt;</code> markers with a fresh random nonce each time, so a file can't fake the end of the fence and pose as instructions. The security template also flags text in the target that addresses an AI agent.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">6 · Limits</span>
+        <h2>What Clearbox does not do</h2>
+      </div>
+      <div class="grid-2">
+        <div class="note"><span class="i">1</span><p><strong>No decompilation.</strong> Binary triage reads headers, imports and strings. Control flow and pseudocode need Ghidra, IDA or Hopper, ideally in a disposable VM.</p></div>
+        <div class="note"><span class="i">2</span><p><strong>No runtime behavior.</strong> Clearbox can show that code calls <code>fetch</code>, not which hosts it reaches when it runs.</p></div>
+        <div class="note"><span class="i">3</span><p><strong>Patterns see literal calls.</strong> A capability hidden behind a wrapper is counted where the wrapper calls the real API, not at every call site.</p></div>
+        <div class="note"><span class="i">4</span><p><strong>No downloads.</strong> You clone or extract the target yourself, which keeps the network out of the tool.</p></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site">
+  <div class="container">
+    <span>Clearbox · MIT license</span>
+    <nav aria-label="Footer"><a href="../">Home</a><a href="../case-studies/spotify/">Spotify case study</a><a href="../case-studies/rea/">REA case study</a><a href="https://github.com/vosbek/reverse-enginer-rea">Source</a></nav>
+  </div>
+</footer>
+<script src="../assets/site.js"></script>
+</body>
+</html>

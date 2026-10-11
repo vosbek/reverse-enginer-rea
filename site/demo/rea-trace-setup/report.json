@@ -1,5 +1,5 @@
 {
- "clearbox": "0.1.0",
+ "clearbox": "0.2.0",
  "manifest": {
   "target": "morluto/rea",
   "template": {
@@ -11,10 +11,10 @@
   "params": {
    "feature": "setup agent client configuration"
   },
-  "started": "2026-10-11T18:05:39+00:00",
-  "duration_s": 14.47,
+  "started": "2026-10-11T18:54:52+00:00",
+  "duration_s": 15.64,
   "analyzers": {
-   "trace": 14.432
+   "trace": 15.601
   },
   "python": "3.13.16",
   "limits": {
@@ -41,7 +41,7 @@
    "high": 185,
    "low": 43
   },
-  "content_sha256": "6b51f527c86200634424dd707a629b18ad013668d8cdbdb736133b32d558ea5f",
+  "content_sha256": "3780f5310a5f6c448cf51b5534933b97827b02e27c9e5dfaa2dc80e4dbea2960",
   "link_template": "https://github.com/morluto/rea/blob/a95795c6ed3cb149e03460f4c818ad12e0c670d9/{path}#L{line}"
  },
  "sections": [
@@ -575,16 +575,16 @@
        ]
       },
       {
-       "path": "src/application/GeminiClientSettings.ts",
+       "path": "src/application/ClientRegistrationStatus.ts",
        "role": "caller",
        "links": 3,
        "area": "src/application",
        "_ev": [
         {
-         "path": "src/application/GeminiClientSettings.ts",
+         "path": "src/application/ClientRegistrationStatus.ts",
          "line": 1,
          "snippet": "",
-         "sha256": "eff9e329cc606ecce6b34abcf85e25d5ea7a3c5dc296ce382c3744e560633728"
+         "sha256": "340b0268f11e3fdde2270359c77787cd85428f94fd9b16d5dcac993cc91b5386"
         }
        ]
       },
@@ -603,16 +603,16 @@
        ]
       },
       {
-       "path": "src/application/ClientRegistrationStatus.ts",
+       "path": "src/application/GeminiClientSettings.ts",
        "role": "caller",
        "links": 3,
        "area": "src/application",
        "_ev": [
         {
-         "path": "src/application/ClientRegistrationStatus.ts",
+         "path": "src/application/GeminiClientSettings.ts",
          "line": 1,
          "snippet": "",
-         "sha256": "340b0268f11e3fdde2270359c77787cd85428f94fd9b16d5dcac993cc91b5386"
+         "sha256": "eff9e329cc606ecce6b34abcf85e25d5ea7a3c5dc296ce382c3744e560633728"
         }
        ]
       },
@@ -645,30 +645,16 @@
        ]
       },
       {
-       "path": "src/application/DoctorScope.ts",
+       "path": "scripts/verify-package-environment.mjs",
        "role": "caller",
        "links": 1,
-       "area": "src/application",
+       "area": "scripts",
        "_ev": [
         {
-         "path": "src/application/DoctorScope.ts",
+         "path": "scripts/verify-package-environment.mjs",
          "line": 1,
          "snippet": "",
-         "sha256": "00bb222fede50f1f8a3096e56b4457c5b5a9c146de503a691290da6cd2064170"
-        }
-       ]
-      },
-      {
-       "path": "src/application/SetupSkill.ts",
-       "role": "caller",
-       "links": 1,
-       "area": "src/application",
-       "_ev": [
-        {
-         "path": "src/application/SetupSkill.ts",
-         "line": 1,
-         "snippet": "",
-         "sha256": "fb45aca482fedace632ceea72c2b7e6fb3d7cffce4e3c4924f34008594e5ce71"
+         "sha256": "f3ff8e156e8293392d9d31a21f2c9a3cc20c5563efb3510819e0db42abf4ca18"
         }
        ]
       },
@@ -687,16 +673,30 @@
        ]
       },
       {
-       "path": "scripts/verify-package-environment.mjs",
+       "path": "src/application/SetupSkill.ts",
        "role": "caller",
        "links": 1,
-       "area": "scripts",
+       "area": "src/application",
        "_ev": [
         {
-         "path": "scripts/verify-package-environment.mjs",
+         "path": "src/application/SetupSkill.ts",
          "line": 1,
          "snippet": "",
-         "sha256": "f3ff8e156e8293392d9d31a21f2c9a3cc20c5563efb3510819e0db42abf4ca18"
+         "sha256": "fb45aca482fedace632ceea72c2b7e6fb3d7cffce4e3c4924f34008594e5ce71"
+        }
+       ]
+      },
+      {
+       "path": "src/application/DoctorScope.ts",
+       "role": "caller",
+       "links": 1,
+       "area": "src/application",
+       "_ev": [
+        {
+         "path": "src/application/DoctorScope.ts",
+         "line": 1,
+         "snippet": "",
+         "sha256": "00bb222fede50f1f8a3096e56b4457c5b5a9c146de503a691290da6cd2064170"
         }
        ]
       },
@@ -743,20 +743,6 @@
        ]
       },
       {
-       "path": "src/application/ClientRegistrationIdentity.ts",
-       "role": "dependency",
-       "links": 4,
-       "area": "src/application",
-       "_ev": [
-        {
-         "path": "src/application/ClientRegistrationIdentity.ts",
-         "line": 1,
-         "snippet": "",
-         "sha256": "d3b1d267ebfe0240b853cf535971dc047d89452de53edac4b250abec2e9e2bed"
-        }
-       ]
-      },
-      {
        "path": "src/identity.ts",
        "role": "dependency",
        "links": 4,
@@ -767,6 +753,20 @@
          "line": 1,
          "snippet": "",
          "sha256": "156c4e40d47105b12e89ae8bc2f2b6651bb81e018fc8e565d062862febbfeb1a"
+        }
+       ]
+      },
+      {
+       "path": "src/application/ClientRegistrationIdentity.ts",
+       "role": "dependency",
+       "links": 4,
+       "area": "src/application",
+       "_ev": [
+        {
+         "path": "src/application/ClientRegistrationIdentity.ts",
+         "line": 1,
+         "snippet": "",
+         "sha256": "d3b1d267ebfe0240b853cf535971dc047d89452de53edac4b250abec2e9e2bed"
         }
        ]
       },
@@ -785,20 +785,6 @@
        ]
       },
       {
-       "path": "src/application/SetupSkill.ts",
-       "role": "dependency",
-       "links": 3,
-       "area": "src/application",
-       "_ev": [
-        {
-         "path": "src/application/SetupSkill.ts",
-         "line": 1,
-         "snippet": "",
-         "sha256": "fb45aca482fedace632ceea72c2b7e6fb3d7cffce4e3c4924f34008594e5ce71"
-        }
-       ]
-      },
-      {
        "path": "src/application/LinuxHopper.ts",
        "role": "dependency",
        "links": 3,
@@ -809,6 +795,20 @@
          "line": 1,
          "snippet": "",
          "sha256": "b45f18669881fb28673b8b4d137017b3d5127e205d28444ed97a30a2e12674f3"
+        }
+       ]
+      },
+      {
+       "path": "src/application/SetupSkill.ts",
+       "role": "dependency",
+       "links": 3,
+       "area": "src/application",
+       "_ev": [
+        {
+         "path": "src/application/SetupSkill.ts",
+         "line": 1,
+         "snippet": "",
+         "sha256": "fb45aca482fedace632ceea72c2b7e6fb3d7cffce4e3c4924f34008594e5ce71"
         }
        ]
       },
@@ -883,16 +883,16 @@
        ]
       },
       {
-       "path": "src/application/GeminiClientSettings.ts",
+       "path": "src/mcpStartupPolicy.ts",
        "role": "dependency",
        "links": 1,
-       "area": "src/application",
+       "area": "src",
        "_ev": [
         {
-         "path": "src/application/GeminiClientSettings.ts",
+         "path": "src/mcpStartupPolicy.ts",
          "line": 1,
          "snippet": "",
-         "sha256": "eff9e329cc606ecce6b34abcf85e25d5ea7a3c5dc296ce382c3744e560633728"
+         "sha256": "f8f745c448ee2a394af3883102487955307d296118b80cf2179d6dc3b568220f"
         }
        ]
       },
@@ -911,30 +911,30 @@
        ]
       },
       {
-       "path": "src/mcpStartupPolicy.ts",
+       "path": "src/application/GeminiClientSettings.ts",
        "role": "dependency",
        "links": 1,
-       "area": "src",
+       "area": "src/application",
        "_ev": [
         {
-         "path": "src/mcpStartupPolicy.ts",
+         "path": "src/application/GeminiClientSettings.ts",
          "line": 1,
          "snippet": "",
-         "sha256": "f8f745c448ee2a394af3883102487955307d296118b80cf2179d6dc3b568220f"
+         "sha256": "eff9e329cc606ecce6b34abcf85e25d5ea7a3c5dc296ce382c3744e560633728"
         }
        ]
       },
       {
-       "path": "src/artifacts/ArtifactResourceScope.ts",
+       "path": "src/artifacts/ArtifactReader.ts",
        "role": "dependency",
        "links": 1,
        "area": "src/artifacts",
        "_ev": [
         {
-         "path": "src/artifacts/ArtifactResourceScope.ts",
+         "path": "src/artifacts/ArtifactReader.ts",
          "line": 1,
          "snippet": "",
-         "sha256": "539e0ac42a63194fcf1cd68adaa9b08c1c57ffd3e50ad8cbd7fb373daad96afc"
+         "sha256": "998ff9148c18b7babee07c42551599f3962c6a51c870ead66897ce235608549b"
         }
        ]
       }

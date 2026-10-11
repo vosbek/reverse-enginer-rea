@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "clearbox"
-version = "0.1.0"
+version = "0.2.0"
 description = "Static, evidence-first reverse engineering. Reads files; never runs, installs, or connects."
 readme = "README.md"
 license = { text = "MIT" }
