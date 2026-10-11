@@ -4,140 +4,173 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Spotify Case Study · Clearbox</title>
-<meta name="description" content="How Clearbox decoded Spotify's Windows installer without running it, what it found, and how we built, verified, and shipped mySpotify on Spotify's official API.">
+<meta name="description" content="How Clearbox decoded Spotify's Windows installer without running it, what it found, and how we built, checked, and released mySpotify on Spotify's official API.">
 <link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Schibsted+Grotesk:wght@600;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
 <link rel="stylesheet" href="../../assets/site.css">
 </head>
 <body>
-<header class="nav">
-  <div class="container">
-    <a class="logo" href="../../"><i aria-hidden="true"></i>Clearbox</a>
-    <nav class="nav-links" aria-label="Main">
+<header class="masthead">
+  <div class="wrap">
+    <a class="wordmark" href="../../">Clearbox</a>
+    <nav aria-label="Main">
       <a href="../../how-it-works/">How it works</a>
       <a href="./" aria-current="page">Spotify case study</a>
       <a href="../rea/">REA case study</a>
       <a href="../../#install">Install</a>
     </nav>
-    <a class="btn small gh" href="https://github.com/vosbek/my-spotify">mySpotify on GitHub</a>
-    <button class="nav-toggle" type="button" aria-expanded="false">Menu</button>
+    <span class="right"><a href="https://github.com/vosbek/my-spotify">mySpotify on GitHub</a></span>
+    <button class="menu" type="button" aria-expanded="false">Menu</button>
   </div>
 </header>
 
 <main>
-  <section class="page-hero">
-    <div class="container">
-      <div class="crumbs"><a href="../../">Clearbox</a> / Case studies / Spotify for Windows</div>
-      <span class="eyebrow">Case study</span>
-      <h1 style="margin-top:14px">Spotify for Windows, decoded without running it, then rebuilt as mySpotify</h1>
-      <p class="lead">We took Spotify's Windows installer and asked Clearbox what it is and what it does to a PC. The first pass showed a gap in Clearbox, so we fixed it. Then we built our own player on Spotify's official API, checked it with the same rules, and shipped it as a Windows program.</p>
-      <div class="metrics" style="margin-top:36px">
-        <div class="metric"><span class="v">0.15 s</span><span class="l">to decode the installer, with nothing executed</span></div>
-        <div class="metric"><span class="v">10</span><span class="l">capabilities identified from its imports</span></div>
-        <div class="metric"><span class="v">2</span><span class="l">host capabilities in mySpotify, both network calls to Spotify</span></div>
-        <div class="metric"><span class="v">v1.1.0</span><span class="l"><code>mySpotify.exe</code>, built and smoke-tested on Windows</span></div>
+  <header class="title">
+    <div class="wrap">
+      <div class="kicker"><a href="../../">Clearbox</a> · Case study</div>
+      <h1 style="max-width:20em">Spotify for Windows, decoded without running it and rebuilt as mySpotify</h1>
+      <p class="standfirst">We asked what Spotify's Windows installer is and what it does to a PC, using only its bytes. Answering properly required extending Clearbox. We then built a replacement player on Spotify's official API, held it to the same checks, and released it as a Windows program.</p>
+      <div class="byline"><span><b>Target</b> SpotifySetup.exe 1.3.4.258</span><span><b>Tool</b> Clearbox 0.2.0</span><span><b>Result</b> <a href="https://github.com/vosbek/my-spotify/releases/tag/v1.1.0">mySpotify v1.1.0</a></span></div>
+    </div>
+  </header>
+
+  <section class="part">
+    <div class="wrap">
+      <div class="prose">
+        <h2>Summary</h2>
+        <p class="lead-in">The 1 MB file Spotify serves as its Windows download is not the app. It is a signed downloader that fetches the real client from Spotify's CDN, installs it for the current user, and coordinates with Spotify's updater.</p>
+        <p>Clearbox reached that conclusion in 0.15 seconds without executing anything. It read the file's import table (193 functions from 8 DLLs), its version resource, the names in its certificate table, and 213 readable UTF-16 strings. Two details stood out. The download address is stored in a small block appended after the program code. The installer's networking library is loaded at runtime rather than declared, so a scanner that trusts the import table would conclude the program never touches the network.</p>
+        <p>Because the installer carries none of the app's features, we rebuilt the player from Spotify's public Web API. mySpotify is about 1,550 lines. A security scan finds exactly two host capabilities in it, both network requests to Spotify.</p>
       </div>
     </div>
   </section>
 
-  <section class="band tint">
-    <div class="container narrow">
-      <div class="section-head">
-        <span class="eyebrow">What we did</span>
-        <h2>Eight steps, each with a receipt</h2>
-        <p>Every step links to the commit, report, or release it produced.</p>
-      </div>
-      <ol class="timeline">
-        <li><div class="step"><h3>Quarantined the installer</h3><p>The official download, <code>SpotifySetup.exe</code> (1,074,664 bytes, SHA-256 <code>b7d990f2…1258b</code>), went into its own folder. It was never run.</p></div></li>
-        <li><div class="step"><h3>First pass: Clearbox fell short</h3><p>Clearbox 0.1 identified a 64-bit Windows program, listed its 7 sections and pulled 12 strings. It could not say who signed it, what it imports, or what it is allowed to do. For a Windows binary that is most of the story.</p></div></li>
-        <li><div class="step"><h3>Taught Clearbox to read Windows programs</h3><p>We added a PE decoder: the import table, version resource, signer names from the certificate table, hardening flags, UTF-16 strings, and a map from Windows APIs to plain-language capabilities. A synthetic test executable guards it.</p>
-          <div class="artifacts"><a href="https://github.com/vosbek/reverse-enginer-rea/commit/b84f954">Commit<span>b84f954</span></a><a href="https://github.com/vosbek/reverse-enginer-rea/blob/main/clearbox/analyzers/pe.py">pe.py</a></div></div></li>
-        <li><div class="step"><h3>Re-ran the triage</h3><p>In 0.15 seconds: 8 imported DLLs with 193 functions, 10 capabilities, the product identity, 4 certificate names, and 213 readable UTF-16 strings.</p>
-          <div class="artifacts"><a href="reports/spotify-installer/">Installer report</a><a href="reports/spotify-installer/report.json">JSON</a></div></div></li>
-        <li><div class="step"><h3>Chose how to rebuild</h3><p>The installer carries no app features, so we mapped what any user sees in the desktop app to Spotify's public Web API, and chose the official playback SDK over reimplementing Spotify's private protocol.</p></div></li>
-        <li><div class="step"><h3>Built mySpotify</h3><p>About 1,550 lines: a standard-library Python launcher and a plain JavaScript app with no build step. It's tested against a mocked Spotify with 18 browser checks and 6 server tests.</p>
-          <div class="artifacts"><a href="https://github.com/vosbek/my-spotify/commit/7283b99">Commit<span>7283b99</span></a><a href="https://github.com/vosbek/my-spotify">Repository</a></div></div></li>
-        <li><div class="step"><h3>Checked it with the same rules</h3><p>Clearbox's security scan of mySpotify finds two host capabilities, both network calls: one to the Web API and one to Spotify's sign-in token endpoint.</p>
-          <div class="artifacts"><a href="reports/myspotify-self/">mySpotify security report</a></div></div></li>
-        <li><div class="step"><h3>Shipped a Windows program</h3><p>GitHub Actions builds <code>mySpotify.exe</code> on Windows, runs the tests, starts the program, checks that it serves the app, and publishes it with a checksum.</p>
-          <div class="artifacts"><a href="https://github.com/vosbek/my-spotify/releases/tag/v1.1.0">Release<span>v1.1.0</span></a><a href="https://github.com/vosbek/my-spotify/commit/c948139">Commit<span>c948139</span></a><a href="https://github.com/vosbek/my-spotify/blob/main/.github/workflows/windows-exe.yml">Build workflow</a></div></div></li>
+  <section class="part">
+    <div class="wrap">
+      <h2 class="sec">Method</h2>
+      <ol class="method">
+        <li><div><h3>Quarantine the installer</h3><p>The official download (1,074,664 bytes, SHA-256 <code>b7d990f2…1258b</code>) was placed in its own folder and never run.</p></div></li>
+        <li><div><h3>First pass, and the gap it exposed</h3><p>Clearbox 0.1 identified a 64-bit Windows program, listed its seven sections and extracted twelve strings. It could not say who signed the file, what it imports, or what it is permitted to do. For a Windows binary that is most of the useful information.</p></div></li>
+        <li><div><h3>Extend Clearbox to read Windows programs</h3><p>We added a PE decoder covering the import table, version resource, certificate signer names, hardening flags and UTF-16 strings, plus a mapping from Windows APIs to capabilities. A synthetic executable in the test suite guards it.</p><p class="refs"><a href="https://github.com/vosbek/reverse-enginer-rea/commit/b84f954">Commit b84f954</a><a href="https://github.com/vosbek/reverse-enginer-rea/blob/main/clearbox/analyzers/pe.py">pe.py</a></p></div></li>
+        <li><div><h3>Re-run the triage</h3><p>The second pass took 0.15 seconds and produced the findings below.</p><p class="refs"><a href="reports/spotify-installer/">Installer report</a><a href="reports/spotify-installer/report.json">Report data (JSON)</a></p></div></li>
+        <li><div><h3>Choose a rebuild route</h3><p>We mapped what a user sees in the desktop app to Spotify's public Web API. We chose Spotify's official playback SDK over reimplementing its private protocol.</p></div></li>
+        <li><div><h3>Build mySpotify</h3><p>A Python launcher that uses only the standard library and a plain JavaScript app with no build step. It is tested against a mocked Spotify with 18 browser checks and 6 server tests.</p><p class="refs"><a href="https://github.com/vosbek/my-spotify/commit/7283b99">Commit 7283b99</a><a href="https://github.com/vosbek/my-spotify">Repository</a></p></div></li>
+        <li><div><h3>Scan mySpotify with the same rules</h3><p>Two host capabilities were found, both network requests to Spotify.</p><p class="refs"><a href="reports/myspotify-self/">mySpotify security report</a></p></div></li>
+        <li><div><h3>Release a Windows program</h3><p>GitHub Actions builds <code>mySpotify.exe</code> on Windows, runs the tests, starts the program to confirm it serves the app, and publishes it with a checksum.</p><p class="refs"><a href="https://github.com/vosbek/my-spotify/releases/tag/v1.1.0">Release v1.1.0</a><a href="https://github.com/vosbek/my-spotify/blob/main/.github/workflows/windows-exe.yml">Build workflow</a></p></div></li>
       </ol>
     </div>
   </section>
 
-  <section class="band" id="anatomy">
-    <div class="container">
-      <div class="section-head">
-        <span class="eyebrow">Anatomy of SpotifySetup.exe</span>
-        <h2>A 1 MB downloader, signed by Spotify AB</h2>
-        <p>Spotify Installer 1.3.4.258, original name <code>installer_stub.exe</code>, 64-bit Windows GUI. Signed by Spotify AB through DigiCert's G4 code-signing CA, with a 2025 timestamp. Built with MSVC with ASLR and DEP enabled, and a deterministic build timestamp.</p>
+  <section class="part" id="technique">
+    <div class="wrap">
+      <h2 class="sec">How the binary was read</h2>
+      <div class="prose" style="margin-bottom:28px">
+        <p>No disassembler, debugger or sandbox was involved, and the file was never executed. A Windows executable is a documented container format (PE/COFF). Clearbox's PE decoder, about 200 lines of Python, reads it the way the Windows loader would, using <code>struct</code> to unpack fixed-size records at known offsets and bounds-checking every read. The table lists each structure it read from this file, in order, and what that structure revealed. Figures and tables referred to here appear in the next section.</p>
+      </div>
+      <div class="table">
+        <table>
+          <thead><tr><th scope="col">Step</th><th scope="col">Where in the file</th><th scope="col">What was read</th><th scope="col">What it showed</th></tr></thead>
+          <tbody>
+            <tr><td>1. DOS header</td><td class="mono">0x0, 0x3c</td><td>The <code>MZ</code> signature, and <code>e_lfanew</code>, the pointer to the real header</td><td><code>e_lfanew</code> = <code>0x118</code>; the bytes there are <code>PE\0\0</code></td></tr>
+            <tr><td>2. COFF header</td><td class="mono">0x11c</td><td>Machine, section count, timestamp, characteristics</td><td>Machine <code>0x8664</code> (x86-64), 7 sections, timestamp <code>0x4554fa1e</code>, which falls in 2006 and marks a deterministic build</td></tr>
+            <tr><td>3. Optional header</td><td class="mono">0x130</td><td>Format magic, entry point, subsystem, DLL characteristics</td><td><code>0x20b</code> = 64-bit PE32+; entry point at RVA <code>0x1688</code>; subsystem 2 = GUI; flags <code>0x8160</code> = high-entropy ASLR, ASLR, DEP, Terminal Server aware</td></tr>
+            <tr><td>4. Data directories</td><td class="mono">0x1a0</td><td>The table of pointers to the import table, resources and certificate table</td><td>Imports at RVA <code>0xb54d8</code> (180 bytes, 8 DLLs plus a terminator); resources at RVA <code>0xc5000</code>; certificate table at file offset <code>0x103c68</code></td></tr>
+            <tr><td>5. Section table</td><td class="mono">0x220</td><td>Seven 40-byte records mapping memory addresses (RVAs) to file offsets</td><td>The import table lives in <code>.rdata</code> at file offset <code>0xb42d8</code>; Figure 1 is drawn from these records</td></tr>
+            <tr><td>6. Import table</td><td class="mono">0xb42d8</td><td>20-byte import descriptors, each naming a DLL and an array of 8-byte thunks; a thunk is either an ordinal or a pointer to a hint and name</td><td>193 imported functions from 8 DLLs (Figure 2), including four OLEAUT32 imports by ordinal only</td></tr>
+            <tr><td>7. Version resource</td><td class="mono">.rsrc</td><td>The <code>VS_VERSIONINFO</code> block's UTF-16 key/value strings</td><td>Product, company, version and <code>installer_stub.exe</code></td></tr>
+            <tr><td>8. Certificate table</td><td class="mono">0x103c68</td><td>The <code>WIN_CERTIFICATE</code> header (10,624 bytes, revision 2.0, type 2 = PKCS #7), then the DER bytes scanned for X.509 name attributes CN (2.5.4.3) and O (2.5.4.10)</td><td>Spotify AB, the DigiCert signing chain and the timestamping authority</td></tr>
+            <tr><td>9. Gap check</td><td class="mono">0x103c00</td><td>The end of the last section compared with the start of the certificate table</td><td>104 unaccounted bytes; dumping them revealed a short header and the URL template (finding 2)</td></tr>
+            <tr><td>10. Strings</td><td>Whole file</td><td>Runs of printable ASCII, and of UTF-16LE, the encoding Windows programs use for text</td><td>45 notable ASCII strings and 213 readable UTF-16 strings, including the mutex names and the Store package name</td></tr>
+            <tr><td>11. Capability mapping</td><td>Import list</td><td>Each imported function matched against families of Windows APIs</td><td>The ten capabilities in Table 1</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="prose mt">
+        <p><strong>What this approach does not cover.</strong> The 363 KB of machine code in <code>.text</code> was not disassembled, so the order in which the installer does things, and the exact registry keys and folders it writes, are not known from this analysis. Those would come from loading the file into Ghidra or IDA. Watching it run in a disposable virtual machine would also show them. Static reading was enough to establish what the file is, who signed it, what it can do and where it fetches the real client from. It was also enough to plan the rebuild.</p>
+        <p>The decoder is open source: <a href="https://github.com/vosbek/reverse-enginer-rea/blob/main/clearbox/analyzers/pe.py">clearbox/analyzers/pe.py</a>. To reproduce the analysis, put the installer in an empty folder and run <code>clearbox scan &lt;folder&gt; -t binary-triage</code>.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="part" id="anatomy">
+    <div class="wrap">
+      <h2 class="sec">Anatomy of the installer</h2>
+      <div class="table" style="max-width:760px">
+        <table class="facts">
+          <tbody>
+            <tr><th scope="row">Product</th><td>Spotify Installer, Spotify Ltd, version 1.3.4.258.gc60b10b0946a</td></tr>
+            <tr><th scope="row">Original filename</th><td class="mono">installer_stub.exe</td></tr>
+            <tr><th scope="row">Format</th><td>PE32+, x86-64, Windows GUI, built with MSVC</td></tr>
+            <tr><th scope="row">Signed by</th><td>Spotify AB, through DigiCert Trusted G4 Code Signing (2021 CA1), timestamped by DigiCert's 2025 authority. Names are read from the certificates; the chain was not validated.</td></tr>
+            <tr><th scope="row">Hardening</th><td>ASLR, high-entropy ASLR, DEP</td></tr>
+            <tr><th scope="row">Build timestamp</th><td><code>0x4554fa1e</code>, not a real date: a deterministic build</td></tr>
+          </tbody>
+        </table>
       </div>
 
-      <div class="chart" style="margin-bottom:20px">
-        <h3>Where the 1,074,664 bytes go</h3>
-        <p class="sub">File layout, drawn to scale. Hover a segment for its offset and size.</p>
+      <div class="chart wide" style="max-width:1040px">
+        <h3>Figure 1. File layout of SpotifySetup.exe, to scale</h3>
         <div class="filemap">
-          <div class="strip" role="img" aria-label="File layout: headers 1 KB, code 363 KB, read-only data 380 KB, small sections 31 KB, resources 289 KB, appended config block 104 bytes, signature 10.6 KB.">
-            <div class="seg small" style="flex:1024" data-tip-title="PE headers" data-tip="0x0 · 1,024 bytes"></div>
-            <div class="seg code" style="flex:363008" data-tip-title=".text · code" data-tip="0x400 · 363,008 bytes"></div>
-            <div class="seg" style="flex:379904" data-tip-title=".rdata · read-only data and import tables" data-tip="0x58e00 · 379,904 bytes"></div>
-            <div class="seg small" style="flex:27136" data-tip-title=".data, .pdata, .fptable" data-tip="0xb5a00 · 27,136 bytes in three small sections"></div>
-            <div class="seg res" style="flex:288768" data-tip-title=".rsrc · icons, dialogs, version info" data-tip="0xbc400 · 288,768 bytes"></div>
-            <div class="seg small" style="flex:4096" data-tip-title=".reloc · relocations" data-tip="0x102c00 · 4,096 bytes"></div>
-            <div class="seg hl" style="flex:104" data-tip-title="Appended config block" data-tip="0x103c00 · 104 bytes · holds the download URL template"></div>
-            <div class="seg small" style="flex:10624" data-tip-title="Authenticode signature" data-tip="0x103c68 · 10,624 bytes · Spotify AB via DigiCert"></div>
+          <div class="strip" role="img" aria-label="Headers 1 KB, code 363 KB, read-only data 380 KB, small sections 27 KB, resources 289 KB, relocations 4 KB, appended block 104 bytes, signature 10.6 KB.">
+            <div class="seg small" style="flex:1024" data-tip-title="PE headers" data-tip="offset 0x0, 1,024 bytes"></div>
+            <div class="seg" style="flex:363008" data-tip-title=".text (code)" data-tip="offset 0x400, 363,008 bytes"></div>
+            <div class="seg" style="flex:379904" data-tip-title=".rdata (read-only data, import tables)" data-tip="offset 0x58e00, 379,904 bytes"></div>
+            <div class="seg small" style="flex:27136" data-tip-title=".data, .pdata, .fptable" data-tip="offset 0xb5a00, 27,136 bytes"></div>
+            <div class="seg res" style="flex:288768" data-tip-title=".rsrc (icons, dialogs, version information)" data-tip="offset 0xbc400, 288,768 bytes"></div>
+            <div class="seg small" style="flex:4096" data-tip-title=".reloc" data-tip="offset 0x102c00, 4,096 bytes"></div>
+            <div class="seg hl" style="flex:104" data-tip-title="Appended block" data-tip="offset 0x103c00, 104 bytes, holds the download URL"></div>
+            <div class="seg small" style="flex:10624" data-tip-title="Authenticode signature" data-tip="offset 0x103c68, 10,624 bytes"></div>
           </div>
-          <div class="legend-row"><span><i></i>Code and read-only data</span><span><i class="res"></i>Resources</span><span><i class="small"></i>Headers, small sections, signature</span><span><i class="hl"></i>Appended config block (104 bytes)</span></div>
-          <details class="data"><summary>View as table</summary>
-            <div class="table-wrap"><table>
-              <thead><tr><th>Region</th><th>Offset</th><th>Bytes</th></tr></thead>
-              <tbody>
-                <tr><td>PE headers</td><td class="mono">0x0</td><td class="mono">1,024</td></tr>
-                <tr><td>.text (code)</td><td class="mono">0x400</td><td class="mono">363,008</td></tr>
-                <tr><td>.rdata (read-only data)</td><td class="mono">0x58e00</td><td class="mono">379,904</td></tr>
-                <tr><td>.data, .pdata, .fptable</td><td class="mono">0xb5a00</td><td class="mono">27,136</td></tr>
-                <tr><td>.rsrc (resources)</td><td class="mono">0xbc400</td><td class="mono">288,768</td></tr>
-                <tr><td>.reloc</td><td class="mono">0x102c00</td><td class="mono">4,096</td></tr>
-                <tr><td>Appended config block</td><td class="mono">0x103c00</td><td class="mono">104</td></tr>
-                <tr><td>Authenticode signature</td><td class="mono">0x103c68</td><td class="mono">10,624</td></tr>
-              </tbody>
-            </table></div>
-          </details>
+          <div class="axis"><span>0x0</span><span>0x1065e8 (1,074,664 bytes)</span></div>
         </div>
+        <div class="key"><span><i></i>Code and data</span><span><i class="res"></i>Resources</span><span><i class="small"></i>Headers, small sections, signature</span><span><i class="hl"></i>Appended block, 104 bytes</span></div>
+        <details class="data"><summary>Figure 1 as a table</summary>
+          <div class="table"><table>
+            <thead><tr><th>Region</th><th>Offset</th><th class="num">Bytes</th></tr></thead>
+            <tbody>
+              <tr><td>PE headers</td><td class="mono">0x0</td><td class="num">1,024</td></tr>
+              <tr><td>.text</td><td class="mono">0x400</td><td class="num">363,008</td></tr>
+              <tr><td>.rdata</td><td class="mono">0x58e00</td><td class="num">379,904</td></tr>
+              <tr><td>.data, .pdata, .fptable</td><td class="mono">0xb5a00</td><td class="num">27,136</td></tr>
+              <tr><td>.rsrc</td><td class="mono">0xbc400</td><td class="num">288,768</td></tr>
+              <tr><td>.reloc</td><td class="mono">0x102c00</td><td class="num">4,096</td></tr>
+              <tr><td>Appended block</td><td class="mono">0x103c00</td><td class="num">104</td></tr>
+              <tr><td>Authenticode signature</td><td class="mono">0x103c68</td><td class="num">10,624</td></tr>
+            </tbody>
+          </table></div>
+        </details>
       </div>
 
-      <div class="grid-2">
+      <div class="figs-2 wide" style="max-width:1040px;margin-top:48px">
         <div class="chart">
-          <h3>Functions imported, by DLL</h3>
-          <p class="sub">193 functions from 8 DLLs. No networking DLL is imported.</p>
-          <div class="hbars" role="img" aria-label="Imported functions per DLL: KERNEL32 147, USER32 26, ADVAPI32 8, OLEAUT32 4, SHELL32 3, GDI32 2, ole32 2, COMCTL32 1.">
-            <div class="hbar"><span class="name">KERNEL32.dll</span><span class="track"><span class="fill" style="width:100%;max-width:calc(100% - 44px)" data-tip-title="KERNEL32.dll · 147" data-tip="Processes, files, memory, LoadLibraryExW, GetProcAddress"></span><span class="val">147</span></span></div>
-            <div class="hbar"><span class="name">USER32.dll</span><span class="track"><span class="fill" style="width:calc((100% - 44px) * 26 / 147)" data-tip-title="USER32.dll · 26" data-tip="Windows, dialogs, MessageBoxW"></span><span class="val">26</span></span></div>
-            <div class="hbar"><span class="name">ADVAPI32.dll</span><span class="track"><span class="fill" style="width:calc((100% - 44px) * 8 / 147)" data-tip-title="ADVAPI32.dll · 8" data-tip="Registry writes, file permissions (ACLs), process tokens"></span><span class="val">8</span></span></div>
-            <div class="hbar"><span class="name">OLEAUT32.dll</span><span class="track"><span class="fill" style="width:calc((100% - 44px) * 4 / 147)" data-tip-title="OLEAUT32.dll · 4" data-tip="COM automation, imported by ordinal"></span><span class="val">4</span></span></div>
-            <div class="hbar"><span class="name">SHELL32.dll</span><span class="track"><span class="fill" style="width:calc((100% - 44px) * 3 / 147)" data-tip-title="SHELL32.dll · 3" data-tip="ShellExecuteW, SHGetFolderPathW, SHChangeNotify"></span><span class="val">3</span></span></div>
-            <div class="hbar"><span class="name">GDI32.dll</span><span class="track"><span class="fill" style="width:calc((100% - 44px) * 2 / 147)" data-tip-title="GDI32.dll · 2" data-tip="Drawing"></span><span class="val">2</span></span></div>
-            <div class="hbar"><span class="name">ole32.dll</span><span class="track"><span class="fill" style="width:calc((100% - 44px) * 2 / 147)" data-tip-title="ole32.dll · 2" data-tip="CoInitializeEx, CoCreateInstance"></span><span class="val">2</span></span></div>
-            <div class="hbar"><span class="name">COMCTL32.dll</span><span class="track"><span class="fill" style="width:calc((100% - 44px) * 1 / 147)" data-tip-title="COMCTL32.dll · 1" data-tip="InitCommonControlsEx (progress bar)"></span><span class="val">1</span></span></div>
+          <h3>Figure 2. Imported functions by DLL</h3>
+          <div class="hbars" role="img" aria-label="KERNEL32 147, USER32 26, ADVAPI32 8, OLEAUT32 4, SHELL32 3, GDI32 2, ole32 2, COMCTL32 1.">
+            <div class="hbar"><span class="name">KERNEL32.dll</span><span class="track"><span class="fill" style="width:calc((100% - 40px))" data-tip-title="KERNEL32.dll, 147 functions" data-tip="processes, files, memory, LoadLibraryExW, GetProcAddress"></span><span class="val">147</span></span></div>
+            <div class="hbar"><span class="name">USER32.dll</span><span class="track"><span class="fill" style="width:calc((100% - 40px) * 26 / 147)" data-tip-title="USER32.dll, 26 functions" data-tip="windows, dialogs, MessageBoxW"></span><span class="val">26</span></span></div>
+            <div class="hbar"><span class="name">ADVAPI32.dll</span><span class="track"><span class="fill" style="width:calc((100% - 40px) * 8 / 147)" data-tip-title="ADVAPI32.dll, 8 functions" data-tip="registry, file permissions, process tokens"></span><span class="val">8</span></span></div>
+            <div class="hbar"><span class="name">OLEAUT32.dll</span><span class="track"><span class="fill" style="width:calc((100% - 40px) * 4 / 147)" data-tip-title="OLEAUT32.dll, 4 functions" data-tip="COM automation, by ordinal"></span><span class="val">4</span></span></div>
+            <div class="hbar"><span class="name">SHELL32.dll</span><span class="track"><span class="fill" style="width:calc((100% - 40px) * 3 / 147)" data-tip-title="SHELL32.dll, 3 functions" data-tip="ShellExecuteW, SHGetFolderPathW, SHChangeNotify"></span><span class="val">3</span></span></div>
+            <div class="hbar"><span class="name">GDI32.dll</span><span class="track"><span class="fill" style="width:calc((100% - 40px) * 2 / 147)" data-tip-title="GDI32.dll, 2 functions" data-tip="drawing"></span><span class="val">2</span></span></div>
+            <div class="hbar"><span class="name">ole32.dll</span><span class="track"><span class="fill" style="width:calc((100% - 40px) * 2 / 147)" data-tip-title="ole32.dll, 2 functions" data-tip="CoInitializeEx, CoCreateInstance"></span><span class="val">2</span></span></div>
+            <div class="hbar"><span class="name">COMCTL32.dll</span><span class="track"><span class="fill" style="width:calc((100% - 40px) * 1 / 147)" data-tip-title="COMCTL32.dll, 1 function" data-tip="InitCommonControlsEx"></span><span class="val">1</span></span></div>
           </div>
+          <p class="small">193 functions from 8 DLLs. None is a networking library.</p>
         </div>
-        <div class="chart">
-          <h3>What the imports let it do</h3>
-          <p class="sub">Clearbox maps imported APIs to capabilities.</p>
-          <div class="table-wrap" style="border:0">
+        <div>
+          <h3 style="font-size:16px;margin-bottom:14px">Table 1. Capabilities derived from the imports</h3>
+          <div class="table">
             <table>
               <thead><tr><th>Capability</th><th>Imported functions</th></tr></thead>
               <tbody>
                 <tr><td>Start other programs</td><td class="mono">CreateProcessW, ShellExecuteW</td></tr>
-                <tr><td>Files and folders</td><td class="mono">CreateDirectoryW, MoveFileExW, CopyFileW, DeleteFileW, SHGetFolderPathW, +4</td></tr>
+                <tr><td>Files and folders</td><td class="mono">CreateDirectoryW, MoveFileExW, CopyFileW, DeleteFileW, +5</td></tr>
                 <tr><td>Registry</td><td class="mono">RegCreateKeyExW, RegSetValueExW</td></tr>
                 <tr><td>Load code at runtime</td><td class="mono">LoadLibraryExW, LoadLibraryW, GetProcAddress, +1</td></tr>
-                <tr><td>Privileges and security</td><td class="mono">OpenProcessToken, GetTokenInformation</td></tr>
+                <tr><td>Privileges</td><td class="mono">OpenProcessToken, GetTokenInformation</td></tr>
                 <tr><td>Shell integration</td><td class="mono">SHChangeNotify, CoCreateInstance</td></tr>
-                <tr><td>User interface</td><td class="mono">CreateWindowExW, MessageBoxW, +2</td></tr>
-                <tr><td>Other</td><td>process inspection, version checks, COM setup</td></tr>
+                <tr><td>Interface, version checks, COM</td><td class="mono">CreateWindowExW, VerifyVersionInfoW, CoInitializeEx, +3</td></tr>
               </tbody>
             </table>
           </div>
@@ -146,123 +179,125 @@
     </div>
   </section>
 
-  <section class="band tint" id="findings">
-    <div class="container">
-      <div class="section-head">
-        <span class="eyebrow">Findings</span>
-        <h2>What the evidence says the installer does</h2>
-        <p>Each finding shows the bytes behind it and how sure we are. "Parsed" means read from a structure; "inferred" means a conclusion from parsed facts that a disassembler would confirm.</p>
+  <section class="part" id="findings">
+    <div class="wrap">
+      <h2 class="sec">Findings</h2>
+      <p class="prose" style="margin-bottom:36px">Each finding lists the bytes it rests on, by file offset or import, and states whether it was read directly from a structure or inferred from what was read.</p>
+
+      <div class="finding">
+        <h3>1. It is a downloader, not the application</h3>
+        <p class="prose">The version resource names the file <code>installer_stub.exe</code>. The client itself, <code>SpotifyFullSetup.exe</code>, is downloaded from Spotify's CDN at install time, with the CPU architecture inserted into the address.</p>
+<pre class="evidence"><span class="at">0x1029fc</span>  OriginalFilename: installer_stub.exe
+<span class="at">0x063e92</span>  https://download.scdn.co/SpotifyFullSetup.exe   (UTF-16)</pre>
+        <p class="basis">Basis: read from the version resource and string table.</p>
       </div>
-      <div class="findings">
-        <article class="finding">
-          <div class="say"><span class="conf">Parsed</span><h3>It's a downloader, not the app</h3><p>The original filename is <code>installer_stub.exe</code>. The real client, <code>SpotifyFullSetup</code>, is fetched at install time from Spotify's CDN, with the CPU architecture filled into the URL.</p></div>
-          <div class="proof"><span class="lbl">Evidence</span>
-            <div class="ev"><span class="at">0x1029fc</span><span class="is">OriginalFilename: installer_stub.exe</span></div>
-            <div class="ev"><span class="at">0x63e92</span><span class="is">https://download.scdn.co/SpotifyFullSetup.exe (UTF-16)</span></div></div>
-        </article>
-        <article class="finding">
-          <div class="say"><span class="conf">Parsed</span><h3>The download URL lives outside the code</h3><p>The template URL sits in a 104-byte block appended after the program image, just before the signature, with a small binary header in front of it. Keeping it out of the compiled code lets one build be pointed at different downloads. That's our reading of why; the bytes themselves are certain.</p></div>
-          <div class="proof"><span class="lbl">Evidence</span>
-            <div class="ev"><span class="at">0x103c00</span><span class="is">104-byte block between .reloc and the certificate table</span></div>
-            <div class="ev"><span class="at">0x103c3b</span><span class="is">https://download.scdn.co/SpotifyFullSetup[ARCH].exe</span></div></div>
-        </article>
-        <article class="finding">
-          <div class="say"><span class="conf inferred">Inferred</span><h3>Its networking is hidden from the import table</h3><p>None of the 8 imported DLLs handles networking, yet <code>WININET.dll</code> appears in the binary's strings and it imports <code>LoadLibraryExW</code> and <code>GetProcAddress</code>. It most likely loads WinINet at runtime. A scanner that trusted imports alone would call this program offline.</p></div>
-          <div class="proof"><span class="lbl">Evidence</span>
-            <div class="ev"><span class="at">0xa6d90</span><span class="is">WININET.dll</span></div>
-            <div class="ev"><span class="at">imports</span><span class="is">KERNEL32!LoadLibraryExW, KERNEL32!GetProcAddress</span></div></div>
-        </article>
-        <article class="finding">
-          <div class="say"><span class="conf">Parsed</span><h3>It knows about the Microsoft Store edition</h3><p>The Store package name is in the UTF-16 string table, alongside the Windows app-model API set it would use to look for a Store install.</p></div>
-          <div class="proof"><span class="lbl">Evidence</span>
-            <div class="ev"><span class="at">0xa64c8</span><span class="is">SpotifyAB.SpotifyMusic</span></div>
-            <div class="ev"><span class="at">0x5d680</span><span class="is">api-ms-win-appmodel-runtime-l1-1-2</span></div></div>
-        </article>
-        <article class="finding">
-          <div class="say"><span class="conf">Parsed</span><h3>It coordinates with an updater through named locks</h3><p>Four system-wide mutex names keep the installer and Spotify's updater from running over each other.</p></div>
-          <div class="proof"><span class="lbl">Evidence</span>
-            <div class="ev"><span class="at">0x63218</span><span class="is">Spotify Update Mutex</span></div>
-            <div class="ev"><span class="at">0x63248</span><span class="is">Spotify Update Failed Mutex</span></div>
-            <div class="ev"><span class="at">0x63280</span><span class="is">Spotify Update Started Mutex · …Interactive Mutex</span></div></div>
-        </article>
-        <article class="finding">
-          <div class="say"><span class="conf">Parsed</span><h3>It changes your PC, per user, without asking for admin</h3><p>It can write files, the registry and file permissions, refresh the shell, and launch programs. Its strings name the files it swaps in. It imports no elevation API.</p></div>
-          <div class="proof"><span class="lbl">Evidence</span>
-            <div class="ev"><span class="at">imports</span><span class="is">RegCreateKeyExW, RegSetValueExW, SetEntriesInAclW, SetNamedSecurityInfoW</span></div>
-            <div class="ev"><span class="at">0x638f8</span><span class="is">Spotify_new.exe · Spotify.exe · uninstall.exe</span></div></div>
-        </article>
+
+      <div class="finding">
+        <h3>2. The download address is stored outside the code</h3>
+        <p class="prose">The URL template sits in a 104-byte block appended after the program image and just before the signature, behind a short binary header. Keeping it out of the compiled code would let one build be pointed at different downloads. That reading of the purpose is ours; the location is certain.</p>
+<pre class="evidence"><span class="at">0x103c00</span>  start of the 104-byte block, between .reloc and the certificate table
+<span class="at">0x103c3b</span>  https://download.scdn.co/SpotifyFullSetup[ARCH].exe</pre>
+        <p class="basis">Basis: read from the section table and file bytes.</p>
       </div>
-      <div class="note warn" style="margin-top:24px"><span class="i">!</span><p><strong>What the installer can't tell us:</strong> anything about the app's screens or features. Those come with the full client the stub downloads, and we chose not to run it. The <a href="https://github.com/vosbek/my-spotify/blob/main/recon/scan-installed-spotify.ps1">recon script</a> applies the same static triage to an existing <code>%APPDATA%\Spotify</code> install.</p></div>
+
+      <div class="finding">
+        <h3>3. Its networking is not declared in the import table</h3>
+        <p class="prose">None of the eight imported DLLs handles networking. The binary does contain the name <code>WININET.dll</code> and imports <code>LoadLibraryExW</code> and <code>GetProcAddress</code>, the functions used to load a library while running. It most likely loads WinINet that way. Confirming it requires disassembly.</p>
+<pre class="evidence"><span class="at">0x0a6d90</span>  WININET.dll
+<span class="at">imports </span>  KERNEL32!LoadLibraryExW, KERNEL32!GetProcAddress</pre>
+        <p class="basis">Basis: inferred from the string table and import table.</p>
+      </div>
+
+      <div class="finding">
+        <h3>4. It recognizes the Microsoft Store edition</h3>
+        <p class="prose">The Store package name appears in the UTF-16 string table next to the Windows app-model API set used to look up installed Store packages.</p>
+<pre class="evidence"><span class="at">0x0a64c8</span>  SpotifyAB.SpotifyMusic
+<span class="at">0x05d680</span>  api-ms-win-appmodel-runtime-l1-1-2</pre>
+        <p class="basis">Basis: read from the string table.</p>
+      </div>
+
+      <div class="finding">
+        <h3>5. It coordinates with Spotify's updater through named mutexes</h3>
+        <p class="prose">Four system-wide mutex names prevent the installer and the updater from running at the same time.</p>
+<pre class="evidence"><span class="at">0x063218</span>  Spotify Update Mutex
+<span class="at">0x063248</span>  Spotify Update Failed Mutex
+<span class="at">0x063280</span>  Spotify Update Started Mutex
+<span class="at">0x0632c0</span>  Spotify Update Started Interactive Mutex</pre>
+        <p class="basis">Basis: read from the string table.</p>
+      </div>
+
+      <div class="finding">
+        <h3>6. It modifies the PC for the current user, without requesting administrator rights</h3>
+        <p class="prose">The imports allow it to write, move and delete files, write the registry, change file permissions, refresh the shell, and launch programs. Its strings name the executables it installs and swaps. It imports no function for requesting elevation.</p>
+<pre class="evidence"><span class="at">imports </span>  RegCreateKeyExW, RegSetValueExW, SetEntriesInAclW, SetNamedSecurityInfoW
+<span class="at">0x0638f8</span>  Spotify_new.exe    Spotify.exe    uninstall.exe</pre>
+        <p class="basis">Basis: read from the import table and string table.</p>
+      </div>
+
+      <div class="prose mt">
+        <p><strong>What the installer cannot tell us.</strong> Nothing about the application's screens or features, which arrive with the client the installer downloads. We did not run it. The <a href="https://github.com/vosbek/my-spotify/blob/main/recon/scan-installed-spotify.ps1">recon script</a> in the mySpotify repository applies the same static triage to an existing <code>%APPDATA%\Spotify</code> installation.</p>
+      </div>
     </div>
   </section>
 
-  <section class="band" id="decision">
-    <div class="container">
-      <div class="section-head">
-        <span class="eyebrow">Choosing how to rebuild</span>
-        <h2>Three ways to play Spotify audio in your own app</h2>
-        <p>Spotify's audio is DRM-protected. That single fact decides most of the architecture.</p>
-      </div>
-      <div class="table-wrap">
+  <section class="part" id="decision">
+    <div class="wrap">
+      <h2 class="sec">Choosing how to rebuild</h2>
+      <div class="prose" style="margin-bottom:24px"><p>Spotify encrypts its audio with Widevine DRM. That constraint decides most of the architecture. There are three practical ways for a third-party program to play Spotify audio.</p></div>
+      <div class="table">
         <table>
-          <thead><tr><th scope="col">Route</th><th scope="col">How audio plays</th><th scope="col">Trade-off</th></tr></thead>
+          <thead><tr><th scope="col">Route</th><th scope="col">How audio is played</th><th scope="col">Assessment</th></tr></thead>
           <tbody>
-            <tr><th scope="row">Official SDK <span class="conf" style="margin-left:6px">Chosen</span></th><td>Spotify's Web Playback SDK, inside a browser engine that includes the Widevine DRM module (Edge, Chrome, Firefox)</td><td>Within Spotify's developer terms and stable. Needs Premium, and the player runs in a browser window.</td></tr>
-            <tr><th scope="row">Reimplement the protocol</th><td>An open-source library such as librespot talks to Spotify's private protocol and decrypts audio itself</td><td>Native and light, but against Spotify's terms, breaks when Spotify changes things, and risks the account.</td></tr>
-            <tr><th scope="row">Desktop wrapper</th><td>Electron or Tauri around the web app</td><td>Neither includes Widevine. The one Electron build that does needs third-party licensing and adds about 150 MB.</td></tr>
+            <tr><th scope="row">Official SDK (chosen)</th><td>Spotify's Web Playback SDK, inside a browser engine that includes Widevine: Edge, Chrome or Firefox</td><td>Permitted by Spotify's developer terms and stable. Requires Premium, and the player runs in a browser window.</td></tr>
+            <tr><th scope="row">Reimplement the protocol</th><td>An open-source library such as librespot speaks Spotify's private protocol and decrypts audio itself</td><td>Native and light, but against Spotify's terms, liable to break when Spotify changes the protocol, and a risk to the account.</td></tr>
+            <tr><th scope="row">Desktop wrapper</th><td>Electron or Tauri around a web app</td><td>Neither ships Widevine. The Electron build that does requires third-party licensing and adds about 150 MB.</td></tr>
           </tbody>
         </table>
       </div>
     </div>
   </section>
 
-  <section class="band tint" id="architecture">
-    <div class="container">
-      <div class="section-head">
-        <span class="eyebrow">How mySpotify works</span>
-        <h2>A local launcher, a browser app, and Spotify's own services</h2>
-        <p><code>mySpotify.exe</code> only serves the app's files on <code>127.0.0.1</code>. Sign-in, library calls and audio go straight from the browser to Spotify, so your token never passes through the launcher.</p>
-      </div>
-      <div class="diagram" role="img" aria-label="Architecture: on your PC, mySpotify.exe serves app files on 127.0.0.1:8888 to a browser window. In the browser, the mySpotify app signs in at accounts.spotify.com with PKCE and calls api.spotify.com; the Web Playback SDK streams encrypted audio from Spotify's CDN and decrypts it with Widevine.">
+  <section class="part" id="architecture">
+    <div class="wrap">
+      <h2 class="sec">How mySpotify works</h2>
+      <div class="prose" style="margin-bottom:28px"><p><code>mySpotify.exe</code> serves the application's files on <code>127.0.0.1</code> and does nothing else. Sign-in, library requests and audio go directly from the browser to Spotify, so the user's access token never passes through the launcher.</p></div>
+      <div class="diagram" role="img" aria-label="On the PC, mySpotify.exe serves app files on 127.0.0.1:8888 to a browser window. In the browser, the mySpotify app signs in at accounts.spotify.com with PKCE and calls api.spotify.com; the Web Playback SDK streams encrypted audio from Spotify's CDN.">
         <svg viewBox="0 0 1120 400" aria-hidden="true">
           <defs>
             <marker id="b1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" class="head"/></marker>
             <marker id="b2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" class="head-accent"/></marker>
           </defs>
-          <rect class="box-ext" x="10" y="10" width="640" height="380" rx="16"/>
-          <text x="32" y="42" font-size="14" font-weight="600" class="t-muted">YOUR PC</text>
-          <rect class="box" x="40" y="70" width="230" height="130" rx="12"/>
-          <text x="155" y="104" text-anchor="middle" font-size="16" font-weight="600">mySpotify.exe</text>
+          <rect class="box-ext" x="10" y="10" width="640" height="380" rx="6"/>
+          <text x="30" y="40" font-size="13" font-weight="600" class="t-muted">YOUR PC</text>
+          <rect class="box" x="40" y="70" width="230" height="130" rx="4"/>
+          <text x="155" y="104" text-anchor="middle" font-size="15" font-weight="600">mySpotify.exe</text>
           <text x="155" y="130" text-anchor="middle" font-size="13" class="t-muted">local server</text>
           <text x="155" y="152" text-anchor="middle" font-size="13" class="t-mono">127.0.0.1:8888</text>
           <text x="155" y="178" text-anchor="middle" font-size="12.5" class="t-muted">serves app files only</text>
-          <rect class="box-accent" x="330" y="60" width="290" height="300" rx="12"/>
-          <text x="475" y="92" text-anchor="middle" font-size="16" font-weight="600">Browser window</text>
-          <text x="475" y="114" text-anchor="middle" font-size="12.5" class="t-muted">Edge, Chrome, or Firefox</text>
-          <rect class="box" x="355" y="134" width="240" height="96" rx="10"/>
+          <rect class="box-accent" x="330" y="60" width="290" height="300" rx="4"/>
+          <text x="475" y="92" text-anchor="middle" font-size="15" font-weight="600">Browser window</text>
+          <text x="475" y="114" text-anchor="middle" font-size="12.5" class="t-muted">Edge, Chrome or Firefox</text>
+          <rect class="box" x="355" y="134" width="240" height="96" rx="4"/>
           <text x="475" y="162" text-anchor="middle" font-size="14.5" font-weight="600">mySpotify app</text>
-          <text x="475" y="184" text-anchor="middle" font-size="12.5" class="t-muted">HTML + JS, no build step</text>
-          <text x="475" y="206" text-anchor="middle" font-size="12.5" class="t-muted">token kept in this browser</text>
-          <rect class="box" x="355" y="246" width="240" height="96" rx="10"/>
+          <text x="475" y="184" text-anchor="middle" font-size="12.5" class="t-muted">HTML and JavaScript</text>
+          <text x="475" y="206" text-anchor="middle" font-size="12.5" class="t-muted">token stays in the browser</text>
+          <rect class="box" x="355" y="246" width="240" height="96" rx="4"/>
           <text x="475" y="274" text-anchor="middle" font-size="14.5" font-weight="600">Web Playback SDK</text>
           <text x="475" y="296" text-anchor="middle" font-size="12.5" class="t-muted">Spotify's player, in an iframe</text>
           <text x="475" y="318" text-anchor="middle" font-size="12.5" class="t-muted">Widevine decrypts audio</text>
           <path class="wire" d="M270 135H350" marker-end="url(#b1)"/>
           <text x="310" y="126" text-anchor="middle" font-size="12" class="t-muted">files</text>
-
-          <rect class="box-ext" x="720" y="10" width="390" height="380" rx="16"/>
-          <text x="742" y="42" font-size="14" font-weight="600" class="t-muted">SPOTIFY</text>
-          <rect class="box" x="750" y="70" width="330" height="76" rx="12"/>
+          <rect class="box-ext" x="720" y="10" width="390" height="380" rx="6"/>
+          <text x="740" y="40" font-size="13" font-weight="600" class="t-muted">SPOTIFY</text>
+          <rect class="box" x="750" y="70" width="330" height="76" rx="4"/>
           <text x="915" y="100" text-anchor="middle" font-size="14.5" font-weight="600" class="t-mono">accounts.spotify.com</text>
           <text x="915" y="124" text-anchor="middle" font-size="12.5" class="t-muted">sign-in with PKCE, no client secret</text>
-          <rect class="box" x="750" y="166" width="330" height="76" rx="12"/>
+          <rect class="box" x="750" y="166" width="330" height="76" rx="4"/>
           <text x="915" y="196" text-anchor="middle" font-size="14.5" font-weight="600" class="t-mono">api.spotify.com</text>
-          <text x="915" y="220" text-anchor="middle" font-size="12.5" class="t-muted">library, search, Connect player control</text>
-          <rect class="box" x="750" y="262" width="330" height="96" rx="12"/>
+          <text x="915" y="220" text-anchor="middle" font-size="12.5" class="t-muted">library, search, playback control</text>
+          <rect class="box" x="750" y="262" width="330" height="96" rx="4"/>
           <text x="915" y="294" text-anchor="middle" font-size="14.5" font-weight="600">Spotify CDN</text>
           <text x="915" y="318" text-anchor="middle" font-size="12.5" class="t-muted">encrypted audio, cover art</text>
-          <text x="915" y="338" text-anchor="middle" font-size="12.5" class="t-muted">also reaches your phone and speakers</text>
-
           <path class="wire-accent" d="M595 160C660 160 680 108 746 108" marker-end="url(#b2)"/>
           <path class="wire-accent" d="M595 200C660 200 680 204 746 204" marker-end="url(#b2)"/>
           <path class="wire-accent" d="M595 300C660 300 680 310 746 310" marker-end="url(#b2)"/>
@@ -271,103 +306,91 @@
           <text x="672" y="292" text-anchor="middle" font-size="12" class="t-muted">audio</text>
         </svg>
       </div>
+      <p class="small" style="margin-top:10px">Figure 3. mySpotify's components and where each request goes.</p>
 
-      <div class="table-wrap" style="margin-top:28px">
+      <h3 style="margin:44px 0 14px;font-size:16px">Table 2. Desktop features and the public API behind them in mySpotify</h3>
+      <div class="table">
         <table>
-          <thead><tr><th scope="col">What you see in Spotify's desktop app</th><th scope="col">In mySpotify, via the official API</th></tr></thead>
+          <thead><tr><th scope="col">Feature in Spotify's desktop app</th><th scope="col">Endpoint or component in mySpotify</th></tr></thead>
           <tbody>
-            <tr><td>Home: recents, top artists, top tracks</td><td class="mono">/me/player/recently-played · /me/top/{artists,tracks}</td></tr>
-            <tr><td>Library sidebar with filters, Liked Songs</td><td class="mono">/me/playlists · /me/albums · /me/following · /me/tracks · PUT|DELETE /me/library</td></tr>
-            <tr><td>Search with a top result</td><td class="mono">/search, 10 results per type since Spotify's 2026 limits</td></tr>
-            <tr><td>Playlist, album, and artist pages</td><td class="mono">/playlists/{id}/items (renamed from /tracks in 2026) · /albums/{id} · /artists/{id}/albums</td></tr>
-            <tr><td>Artist "Popular" list</td><td class="mono">top-tracks was removed in 2026 · falls back to a search on the artist</td></tr>
-            <tr><td>Player bar, device picker, queue, media keys</td><td class="mono">Web Playback SDK · /me/player/* · /me/player/devices · Media Session API</td></tr>
-            <tr><td>Lyrics, Canvas videos, friend activity</td><td>No public API, so not included</td></tr>
+            <tr><td>Home: recently played, top artists and tracks</td><td class="mono">/me/player/recently-played, /me/top/{artists,tracks}</td></tr>
+            <tr><td>Library sidebar and Liked Songs</td><td class="mono">/me/playlists, /me/albums, /me/following, /me/tracks, PUT and DELETE /me/library</td></tr>
+            <tr><td>Search with a top result</td><td class="mono">/search, limited to 10 results per type since February 2026</td></tr>
+            <tr><td>Playlist, album and artist pages</td><td class="mono">/playlists/{id}/items (formerly /tracks), /albums/{id}, /artists/{id}/albums</td></tr>
+            <tr><td>An artist's popular tracks</td><td class="mono">top-tracks was withdrawn in 2026; a search on the artist is used instead</td></tr>
+            <tr><td>Player bar, device picker, queue, media keys</td><td class="mono">Web Playback SDK, /me/player/*, /me/player/devices, Media Session API</td></tr>
+            <tr><td>Lyrics, Canvas videos, friend activity</td><td>No public API; not included</td></tr>
           </tbody>
         </table>
       </div>
     </div>
   </section>
 
-  <section class="band" id="gallery">
-    <div class="container">
-      <div class="section-head">
-        <span class="eyebrow">mySpotify</span>
-        <h2>The app</h2>
-        <p>Screens from the automated browser test, which runs the real app against a mocked Spotify. The music shown is sample data.</p>
-      </div>
-      <div class="gallery">
-        <figure><div class="frame"><img src="../../assets/img/msp-playlist.webp" alt="Playlist page with album-art tinted header, track list with liked songs, and the player bar showing remote playback on a phone" width="1440" height="900" loading="lazy"></div><figcaption>Playlists pick up a tint from their cover art. Liked songs, the playing row, and the active device are marked.</figcaption></figure>
-        <figure><div class="frame"><img src="../../assets/img/msp-setup.webp" alt="First-run setup screen asking for a Spotify Client ID with the redirect URI to copy" width="1800" height="1280" loading="lazy" style="object-position:center"></div><figcaption>First run walks you through creating a free Spotify app.</figcaption></figure>
-        <figure><div class="frame"><img src="../../assets/img/msp-home.webp" alt="Home page with greeting, recently played tiles, top tracks and top artists" width="1440" height="900" loading="lazy"></div><figcaption>Home: recents, what's on repeat, your top artists.</figcaption></figure>
-        <figure><div class="frame"><img src="../../assets/img/msp-search.webp" alt="Search results with a top result card and matching songs" width="1440" height="900" loading="lazy"></div><figcaption>Search with a top result. Press / anywhere.</figcaption></figure>
-        <figure><div class="frame"><img src="../../assets/img/msp-settings-light.webp" alt="Settings page in light theme with keyboard shortcuts" width="1440" height="900" loading="lazy"></div><figcaption>Light theme and keyboard shortcuts.</figcaption></figure>
+  <section class="part" id="screens">
+    <div class="wrap">
+      <h2 class="sec">The application</h2>
+      <div class="prose" style="margin-bottom:28px"><p>These screens come from mySpotify's automated browser test, which runs the real application against a mocked Spotify service. The music shown is sample data.</p></div>
+      <figure>
+        <div class="shot"><img src="../../assets/img/msp-playlist.webp" alt="Playlist page with a header tinted from the cover art, a track list with liked songs marked, and the player bar showing playback on a phone" width="1440" height="900" loading="lazy"></div>
+        <figcaption><b>Figure 4.</b> A playlist. The header takes its tint from the cover art. Liked songs, the current track and the active device are marked.</figcaption>
+      </figure>
+      <div class="figs-3 wide">
+        <figure><div class="shot"><img src="../../assets/img/msp-setup.webp" alt="First-run screen asking for a Spotify Client ID" width="1800" height="1280" loading="lazy"></div><figcaption><b>Figure 5.</b> First run explains how to create a free Spotify app.</figcaption></figure>
+        <figure><div class="shot"><img src="../../assets/img/msp-search.webp" alt="Search results with a top result and matching songs" width="1440" height="900" loading="lazy"></div><figcaption><b>Figure 6.</b> Search. Press <kbd>/</kbd> from anywhere.</figcaption></figure>
+        <figure><div class="shot"><img src="../../assets/img/msp-settings-light.webp" alt="Settings in the light theme, with keyboard shortcuts" width="1440" height="900" loading="lazy"></div><figcaption><b>Figure 7.</b> Settings, in the light theme.</figcaption></figure>
       </div>
     </div>
   </section>
 
-  <section class="band tint" id="verify">
-    <div class="container">
-      <div class="section-head">
-        <span class="eyebrow">Verification</span>
-        <h2>Same rules for their code and ours</h2>
-        <p>Clearbox scanned both programs. The installer's capabilities come from its imports; mySpotify's come from its source.</p>
-      </div>
-      <div class="table-wrap">
+  <section class="part" id="verification">
+    <div class="wrap">
+      <h2 class="sec">Verification</h2>
+      <div class="prose" style="margin-bottom:24px"><p>Clearbox examined both programs. The installer's capabilities come from its import table. mySpotify's come from its source code, because its launcher is a Python script.</p></div>
+      <div class="table">
         <table>
           <thead><tr><th scope="col">Capability</th><th scope="col">SpotifySetup.exe</th><th scope="col">mySpotify</th></tr></thead>
           <tbody>
-            <tr><th scope="row">Network</th><td><span class="no">Yes, WinINet loaded at runtime</span></td><td><span class="yes">Spotify only: <code>api.js:17</code>, <code>auth.js:45</code></span></td></tr>
-            <tr><th scope="row">Start other programs</th><td><span class="no">CreateProcessW, ShellExecuteW</span></td><td><span class="yes">None</span></td></tr>
-            <tr><th scope="row">Write, move, or delete files</th><td><span class="no">Yes</span></td><td><span class="yes">None; settings stay in the browser</span></td></tr>
-            <tr><th scope="row">Registry and file permissions</th><td><span class="no">Yes</span></td><td><span class="yes">None</span></td></tr>
-            <tr><th scope="row">Background updater</th><td><span class="no">Coordinated through 4 named mutexes</span></td><td><span class="yes">None; new versions come from Releases</span></td></tr>
+            <tr><th scope="row">Network</th><td>Yes, through WinINet loaded at runtime</td><td>Spotify only: <code>api.js</code> line 17, <code>auth.js</code> line 45</td></tr>
+            <tr><th scope="row">Start other programs</th><td>CreateProcessW, ShellExecuteW</td><td>None</td></tr>
+            <tr><th scope="row">Write, move or delete files</th><td>Yes</td><td>None; settings are kept in the browser</td></tr>
+            <tr><th scope="row">Registry and file permissions</th><td>Yes</td><td>None</td></tr>
+            <tr><th scope="row">Background updater</th><td>Coordinated through four named mutexes</td><td>None; new versions are published as GitHub releases</td></tr>
           </tbody>
         </table>
       </div>
-      <div class="grid-3" style="margin-top:24px">
-        <div class="card"><h3>18 browser checks</h3><p>Sign-in gating, the 2026 response shapes, play and like requests, the 10-result search limit, the top-tracks fallback, device transfer, keyboard control, phone width, and no page errors.</p></div>
-        <div class="card"><h3>6 server tests</h3><p>Path traversal is blocked, security headers are set, only <code>127.0.0.1</code> is answered, and there are no directory listings.</p></div>
-        <div class="card"><h3>Exe smoke test on Windows</h3><p>Every build starts <code>mySpotify.exe</code> on a Windows runner and checks that it serves the app, its scripts, and the sign-in callback.</p></div>
+      <div class="prose mt">
+        <p>mySpotify's own tests run on every change. <strong>18 browser checks</strong> exercise the real application against a mocked Spotify. They cover sign-in gating, the 2026 response formats, play and save requests, the 10-result search limit, the top-tracks fallback, device transfer, keyboard control, phone-width layout and the absence of page errors. <strong>6 server tests</strong> confirm that path traversal is blocked, security headers are sent, only <code>127.0.0.1</code> is answered and directories are never listed. Each Windows build also starts <code>mySpotify.exe</code> on a Windows runner and requests the application, its scripts and the sign-in callback before publishing.</p>
       </div>
     </div>
   </section>
 
-  <section class="band" id="ship">
-    <div class="container">
-      <div class="grid-2" style="align-items:center">
-        <div class="prose">
-          <span class="eyebrow">Shipped</span>
-          <h2 style="font-size:clamp(30px,3.6vw,44px);line-height:1.08">Download mySpotify for Windows</h2>
-          <p>One 8.8 MB program, no Python needed. You'll need Spotify Premium and a free Client ID from Spotify's developer dashboard; the app walks you through it.</p>
-          <p class="mono" style="font-size:12.5px;overflow-wrap:anywhere">SHA-256 0d9d9abe720f8a0aa9bad1a20cba50e5770d9903510c2df2584637f6a8a907a3</p>
-          <div class="cta" style="margin-top:4px"><a class="btn primary" href="https://github.com/vosbek/my-spotify/releases/latest">Download mySpotify.exe</a><a class="btn" href="https://github.com/vosbek/my-spotify#readme">Setup guide</a></div>
-        </div>
-        <div class="note"><span class="i">i</span><p><strong>Why it opens in a browser window.</strong> Spotify only lets third-party apps play audio through its Web Playback SDK, which needs a browser engine with Widevine DRM. For a window of its own, with no tabs or address bar, choose <em>Apps › Install this site as an app</em> in Edge. It is still Edge underneath, because that is what lets the music play. The exe isn't code-signed yet, so Windows asks for confirmation on first run.</p></div>
+  <section class="part" id="release">
+    <div class="wrap">
+      <h2 class="sec">Availability</h2>
+      <div class="prose">
+        <p><a href="https://github.com/vosbek/my-spotify/releases/latest">mySpotify.exe</a> is an 8.8 MB Windows program that does not require Python. Its SHA-256 is <code style="overflow-wrap:anywhere">0d9d9abe720f8a0aa9bad1a20cba50e5770d9903510c2df2584637f6a8a907a3</code>. Using it requires Spotify Premium and a free Client ID from Spotify's developer dashboard. The <a href="https://github.com/vosbek/my-spotify#readme">setup guide</a> covers both.</p>
+        <p>The program is not yet code-signed, so Windows asks for confirmation the first time it runs. It opens in the default browser because Spotify's playback SDK needs a browser engine with Widevine. Edge can install it as an app with its own window (<em>Apps › Install this site as an app</em>).</p>
       </div>
     </div>
   </section>
 
-  <section class="band tint">
-    <div class="container">
-      <div class="section-head">
-        <span class="eyebrow">Limits</span>
-        <h2>What this case study doesn't claim</h2>
-      </div>
-      <div class="grid-2">
-        <div class="note"><span class="i">1</span><p><strong>Static only.</strong> We read the installer; we never ran it or the full client. The runtime networking finding is an inference that a disassembler would confirm.</p></div>
-        <div class="note"><span class="i">2</span><p><strong>Tested against a mock.</strong> mySpotify's checks run against a mocked Spotify. Its first sign-in with a real account is the first live test.</p></div>
-        <div class="note"><span class="i">3</span><p><strong>Spotify's rules apply.</strong> Playback needs Premium, and apps in development mode allow up to 5 users, each added in the dashboard.</p></div>
-        <div class="note"><span class="i">4</span><p><strong>Not affiliated.</strong> mySpotify is an independent app on Spotify's public API. The installer is not redistributed here; only Clearbox's reports are.</p></div>
-      </div>
+  <section class="part" id="limitations">
+    <div class="wrap">
+      <h2 class="sec">Limitations</h2>
+      <ul class="prose" style="padding-left:1.2em">
+        <li>The analysis is static. Neither the installer nor the full client was run, and finding 3 is an inference that disassembly would confirm.</li>
+        <li>mySpotify's tests use a mocked Spotify. Its first sign-in with a real account is its first live test.</li>
+        <li>Spotify's rules apply. Playback requires Premium, and an app in development mode allows up to five users, each added in the developer dashboard.</li>
+        <li>mySpotify is independent of Spotify and uses only its public API. The installer is not redistributed here; only Clearbox's reports are.</li>
+      </ul>
     </div>
   </section>
 </main>
 
 <footer class="site">
-  <div class="container">
-    <span>Reports on this page are committed snapshots from Clearbox 0.2.0.</span>
-    <nav aria-label="Footer"><a href="reports/spotify-installer/">Installer report</a><a href="reports/myspotify-self/">mySpotify report</a><a href="https://github.com/vosbek/my-spotify">mySpotify source</a><a href="../../">Clearbox home</a></nav>
+  <div class="wrap">
+    <span>The reports on this page are committed snapshots from Clearbox 0.2.0.</span>
+    <nav aria-label="Footer"><a href="reports/spotify-installer/">Installer report</a><a href="reports/myspotify-self/">mySpotify report</a><a href="https://github.com/vosbek/my-spotify">mySpotify source</a><a href="../../">Clearbox</a></nav>
   </div>
 </footer>
 <script src="../../assets/site.js"></script>

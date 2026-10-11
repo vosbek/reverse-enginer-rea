@@ -40,10 +40,9 @@ header.top{display:grid;gap:14px;padding-block:36px 28px}
 h1{font-size:clamp(28px,4vw,42px);line-height:1.08;margin:0;letter-spacing:-.025em;text-wrap:balance;font-weight:750}
 h1 .target{font-family:var(--mono);font-weight:600;letter-spacing:-.03em}
 .lede{max-width:72ch;color:var(--ink-2);margin:0;font-size:16px}
-.proof{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-top:8px}
-.proof span{background:var(--surface);padding:12px 14px;display:grid;gap:2px;font-size:12px;color:var(--muted);min-width:0;overflow-wrap:anywhere}
-.proof b{font:650 18px/1.2 var(--sans);color:var(--ink);font-variant-numeric:tabular-nums}
-.proof code{font:12px var(--mono);color:var(--ink-2)}
+.proof{display:flex;flex-wrap:wrap;gap:4px 22px;margin-top:6px;font-size:13.5px;color:var(--muted);overflow-wrap:anywhere}
+.proof b{color:var(--ink-2);font-weight:600}
+.proof code{font:12.5px var(--mono);color:var(--muted)}
 .layout{display:grid;grid-template-columns:220px minmax(0,1fr);gap:40px;margin-top:8px}
 nav.toc{position:sticky;top:16px;align-self:start;display:grid;gap:1px;font-size:14px;padding-top:6px}
 nav.toc a{color:var(--muted);text-decoration:none;padding:6px 10px;border-radius:6px}
@@ -54,21 +53,20 @@ section.sec>p.q{margin:0 0 20px;color:var(--ink-2);max-width:75ch;overflow-wrap:
 .view{margin:0 0 26px;min-width:0}
 .vhead{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-bottom:10px}
 .vhead h3{font-size:15px;margin:0;font-weight:650}
-.pill{font:600 11px/1 var(--sans);letter-spacing:.04em;text-transform:uppercase;border:1px solid var(--line-2);color:var(--muted);padding:4px 7px;border-radius:999px;background:var(--surface)}
-.pill.parsed{border-color:transparent;background:var(--accent-soft);color:var(--accent)}
+.pill{font:12.5px var(--sans);color:var(--muted)}
+.pill::before{content:"· "}
 .count{font:12px var(--sans);color:var(--muted)}
 .note{font-size:13px;color:var(--muted);margin:10px 0 0;max-width:85ch}
-.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
-.tile{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;display:grid;gap:4px;align-content:start}
-.tile .v{font:700 28px/1.1 var(--sans);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
-.tile .l{font-size:13px;font-weight:600;color:var(--ink-2)}
-.tile .h{font-size:12px;color:var(--muted)}
-.bars{display:grid;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px}
+.kv{width:auto;min-width:min(560px,100%);border-top:1px solid var(--line)}
+.kv th{background:none;text-transform:none;letter-spacing:0;font:500 14px var(--sans);color:var(--ink-2);padding:9px 24px 9px 0;border-bottom:1px solid var(--line)}
+.kv td{padding:9px 24px 9px 0;font-variant-numeric:tabular-nums;font-weight:600}
+.kv td.h{font-weight:400;color:var(--muted);font-size:13px}
+.bars{display:grid;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:16px}
 .bar{display:grid;grid-template-columns:minmax(90px,200px) minmax(0,1fr) 90px;gap:12px;align-items:center;font-size:13px}
 .bar .track{height:12px}
 .bar .fill{height:100%;background:var(--data-1);border-radius:0 4px 4px 0;min-width:2px}
 .bar .n{font-variant-numeric:tabular-nums;text-align:right;color:var(--ink-2)}
-.scroll{overflow-x:auto;border:1px solid var(--line);background:var(--surface);border-radius:10px}
+.scroll{overflow-x:auto;border:1px solid var(--line);background:var(--surface);border-radius:4px}
 table{border-collapse:collapse;width:100%;font-size:13.5px}
 th{font:600 11.5px/1.2 var(--sans);letter-spacing:.04em;text-transform:uppercase;color:var(--muted);text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap;background:var(--surface-2)}
 td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top;overflow-wrap:break-word}
@@ -98,12 +96,12 @@ tr.evrow td{background:var(--surface-2);padding:12px 14px}
 .matrix td{border-radius:3px}
 .matrix td.diag{box-shadow:inset 0 0 0 1px var(--line-2)}
 ol.steps{list-style:none;margin:0;padding:0;display:grid;gap:10px;counter-reset:s}
-ol.steps>li{counter-increment:s;display:grid;grid-template-columns:32px minmax(0,1fr);gap:4px 14px;border:1px solid var(--line);background:var(--surface);padding:14px;border-radius:10px}
-ol.steps>li::before{content:counter(s);font:700 14px/1 var(--sans);color:var(--accent);background:var(--accent-soft);width:28px;height:28px;display:grid;place-items:center;border-radius:6px}
+ol.steps>li{counter-increment:s;display:grid;grid-template-columns:32px minmax(0,1fr);gap:4px 14px;border:1px solid var(--line);background:var(--surface);padding:14px;border-radius:4px}
+ol.steps>li::before{content:counter(s) ".";font:600 15px/1.6 var(--sans);color:var(--muted)}
 ol.steps h4{margin:4px 0 8px;font-size:14px;overflow-wrap:anywhere}
 ol.steps pre{margin:0 0 8px;font:12.5px/1.6 var(--mono);white-space:pre-wrap;overflow-wrap:anywhere;color:var(--ink-2)}
 ol.steps .stepbody{grid-column:2;min-width:0}
-.empty{color:var(--muted);font-size:14px;padding:14px 16px;border:1px dashed var(--line-2);border-radius:10px;margin:0}
+.empty{color:var(--muted);font-size:14px;padding:14px 16px;border:1px dashed var(--line-2);border-radius:4px;margin:0}
 ul.blind{margin:0;padding:0;list-style:none;display:grid;gap:8px}
 ul.blind li{border:1px solid var(--line);border-left:3px solid var(--medium);padding:10px 14px;background:var(--surface);border-radius:6px}
 ul.safety{margin:0;padding-left:18px;display:grid;gap:4px;color:var(--ink-2)}
@@ -122,12 +120,11 @@ footer{margin-top:30px;color:var(--muted);font-size:13px}
   <h1><span class="target">morluto/rea</span></h1>
   <p class="lede">What the target declares, what it actually imports, the gaps between the two, and what runs at install.</p>
   <div class="proof">
-    <span><b>2,757</b>files read · 19.6 MB</span>
-    <span><b>0</b>programs executed</span>
-    <span><b>0 / 1</b>high / medium capability sites</span>
-    <span><b>1.69 s</b>analysis time</span>
-    <span><b>3</b>blind spots listed</span>
-    <span><code>ledger 0aa8ee16dff3</code><code>content 8c131124afe2</code><code>Clearbox 0.2.0</code></span>
+    <span><b>2,757</b> files read (19.6 MB) in 1.69 s</span>
+    <span>nothing executed</span>
+    <span><b>0</b> high and <b>1</b> medium capability sites</span>
+    <span><b>3</b> blind spots</span>
+    <span><code>ledger 0aa8ee16dff3 · content 8c131124afe2 · Clearbox 0.2.0</code></span>
   </div>
 </header>
 <div class="layout">
@@ -171,11 +168,11 @@ function evidence(evs){
 function head(v){
   const h = $('div','vhead');
   h.append($('h3', null, v.title || ''));
-  if (v.confidence) { const p = $('span','pill ' + v.confidence, v.confidence); p.title = {parsed:'Read by a real parser',pattern:'Matched a documented pattern',heuristic:'Inferred from scores or structure'}[v.confidence] || ''; h.append(p); }
+  if (v.confidence) { const p = $('span','pill ' + v.confidence, {parsed:'Parsed',pattern:'Pattern match',heuristic:'Heuristic'}[v.confidence] || v.confidence); p.title = {parsed:'Read by a real parser',pattern:'Matched a documented pattern',heuristic:'Inferred from scores or structure'}[v.confidence] || ''; h.append(p); }
   if (v.kind === 'table') h.append($('span','count', v.total > v.rows.length ? `${fmt(v.rows.length)} of ${fmt(v.total)}` : `${fmt(v.total)} ${v.total === 1 ? 'row' : 'rows'}`));
   return h;
 }
-function stats(v){ const g = $('div','tiles'); v.items.forEach(it => { const t = $('div','tile'); t.append($('span','v',fmt(it.value)), $('span','l',it.label), $('span','h',it.hint||'')); g.append(t); }); return g; }
+function stats(v){ const t = $('table','kv'); const tb = $('tbody'); v.items.forEach(it => { const tr = $('tr'); tr.append($('th',null,it.label), $('td',null,fmt(it.value)), $('td','h',it.hint||'')); tb.append(tr); }); t.append(tb); return t; }
 function bars(v){
   const g = $('div','bars'); const max = Math.max(1, ...v.items.map(i => i.value));
   v.items.forEach(it => { const r = $('div','bar'); const tr = $('div','track'); const f = $('div','fill'); f.style.width = (100*it.value/max).toFixed(1)+'%'; tr.append(f);
